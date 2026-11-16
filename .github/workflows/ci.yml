@@ -1,5 +1,6 @@
-# NOTE: this workflow was written but has not been run yet. Expect to adjust it
-# on the first push (service versions, Node version for the chosen branch).
+# NOTE: the unit job passes. The integration job has not completed a run yet:
+# its first attempt stopped at the database client (see "Database client
+# settings"); the steps after it are still unproven.
 name: CI
 
 on:
@@ -64,6 +65,12 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: System packages
         run: sudo apt-get update && sudo apt-get install -y mariadb-client
+      - name: Database client settings
+        # Recent MariaDB clients insist on TLS by default; the service container
+        # offers none ("SSL is required, but the server does not support it").
+        # The [client-mariadb] group is read by MariaDB clients only, including
+        # the ones bench starts itself.
+        run: printf '[client-mariadb]\nskip-ssl\n' > ~/.my.cnf
       - name: Bench
         run: |
           pip install frappe-bench

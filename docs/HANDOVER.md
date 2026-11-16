@@ -28,7 +28,7 @@ the user's side.
 
 | Proposal item | State |
 |---|---|
-| Step 2 — custom app, GPL-3.0, tests | Built. CI workflow written, **never run**. |
+| Step 2 — custom app, GPL-3.0, tests | Built. CI: the unit job passes; the integration job **has not completed a run yet**. |
 | Step 3 — PCGE 2019 chart, apply / merge, defaults | Built and tested. Account types and defaults await the accountant. |
 | Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
 | Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
@@ -169,7 +169,10 @@ Not shipped, because no official source could be confirmed or reached:
 
 - **The screens** (section 9).
 - **ERPNext v16.** It needs Python 3.14 and Node 24, which the test machine did not have.
-- **The CI workflow.** `.github/workflows/ci.yml` has never run.
+- **The CI integration job.** The unit job (lint and pure tests) passes on GitHub. The
+  integration job failed on its first run at the database client step (TLS required by the
+  client, not offered by the service container). A fix was pushed; the steps after it have
+  never run in CI.
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
   machine: it stops while creating its own fixtures, identically on a site without this app.
   That standard behaviour is unaffected rests on this app's tests that non-Peruvian companies
@@ -388,7 +391,7 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 
 1. **Click through the screens** on a v15 site, starting with the "Perú" menu. Half a day,
    and it removes the largest unknown.
-2. **Run the CI workflow** and fix what the first run shows.
+2. **Get the CI integration job green.** It has not completed a run; fix what each attempt shows.
 3. **Accountant session on section 6.** Decisions 10–15 shape everything that posts.
 4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
 5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
