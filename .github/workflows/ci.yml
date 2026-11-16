@@ -1,0 +1,86 @@
+# NOTE: this workflow was written but has not been run yet. Expect to adjust it
+# on the first push (service versions, Node version for the chosen branch).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit tests (no database)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff num2words
+      - run: ruff check .
+      - name: Pure tests
+        run: >
+          python -m unittest
+          erpnext_peru.tests.test_identity
+          erpnext_peru.tests.test_voucher
+          erpnext_peru.tests.test_amount_in_words
+          erpnext_peru.tests.test_translations
+
+  integration:
+    name: Integration tests (ERPNext ${{ matrix.branch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch: version-15
+            python: "3.12"
+            node: "20"
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=2s --health-retries=10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: erpnext_peru
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: System packages
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
+      - name: Bench
+        run: |
+          pip install frappe-bench
+          bench init frappe-bench --frappe-branch ${{ matrix.branch }} --skip-assets --skip-redis-config-generation --python "$(which python)"
+          cd frappe-bench
+          bench set-config -g redis_cache redis://127.0.0.1:6379/1
+          bench set-config -g redis_queue redis://127.0.0.1:6379/2
+          bench set-config -g redis_socketio redis://127.0.0.1:6379/1
+          bench get-app erpnext --branch ${{ matrix.branch }} --skip-assets
+          bench get-app erpnext_peru "$GITHUB_WORKSPACE/erpnext_peru" --skip-assets
+      - name: Site
+        working-directory: frappe-bench
+        run: |
+          mariadb --host 127.0.0.1 --port 3306 -uroot -proot -e "SET GLOBAL character_set_server = 'utf8mb4'; SET GLOBAL collation_server = 'utf8mb4_unicode_ci';"
+          bench new-site test.localhost --db-host 127.0.0.1 --db-port 3306 --db-root-username root --db-root-password root --admin-password admin --mariadb-user-host-login-scope='%'
+          bench --site test.localhost install-app erpnext erpnext_peru
+          bench --site test.localhost set-config allow_tests true
+      - name: Tests
+        working-directory: frappe-bench
+        run: bench --site test.localhost run-tests --app erpnext_peru

@@ -1,0 +1,62 @@
+{
+ "_source": {
+  "comprobante_types": "SUNAT, Anexo N.° 8 - Catálogo de códigos, Catálogo N.° 01 (Anexo E de la R.S. 245-2017/SUNAT, modificatoria de la R.S. 097-2012/SUNAT)",
+  "identity_document_types": "SUNAT, Anexo N.° 8, Catálogo N.° 06 (códigos 0-D: Anexo E de la R.S. 245-2017/SUNAT; códigos E-H: tabla de tipos de documento de identidad de los anexos de la R.S. 000049-2026/SUNAT)",
+  "credit_note_reasons": "SUNAT, Anexo N.° 8, Catálogo N.° 09 (anexo de la R.S. 165-2021/SUNAT)",
+  "debit_note_reasons": "SUNAT, Anexo N.° 8, Catálogo N.° 10 (Anexo E de la R.S. 245-2017/SUNAT)"
+ },
+ "comprobante_types": [
+  {"code": "01", "description": "Factura", "sales_issuable": 1},
+  {"code": "03", "description": "Boleta de venta", "sales_issuable": 1},
+  {"code": "07", "description": "Nota de crédito", "sales_issuable": 1},
+  {"code": "08", "description": "Nota de débito", "sales_issuable": 1},
+  {"code": "09", "description": "Guía de remisión remitente"},
+  {"code": "12", "description": "Ticket de máquina registradora"},
+  {"code": "13", "description": "Documento emitido por bancos, instituciones financieras, crediticias y de seguros que se encuentren bajo el control de la Superintendencia de Banca y Seguros"},
+  {"code": "14", "description": "Recibo servicios públicos"},
+  {"code": "16", "description": "Boleto de viaje emitido por las empresas de transporte público interprovincial de pasajeros"},
+  {"code": "18", "description": "Documentos emitidos por las AFP"},
+  {"code": "20", "description": "Comprobante de retención"},
+  {"code": "31", "description": "Guía de remisión transportista"},
+  {"code": "40", "description": "Comprobante de percepción"},
+  {"code": "41", "description": "Comprobante de percepción - venta interna (físico - formato impreso)"},
+  {"code": "56", "description": "Comprobante de pago SEAE"},
+  {"code": "71", "description": "Guía de remisión remitente complementaria"},
+  {"code": "72", "description": "Guía de remisión transportista complementaria"}
+ ],
+ "identity_document_types": [
+  {"code": "0", "description": "Doc. trib. no domiciliado sin RUC"},
+  {"code": "1", "description": "Documento Nacional de Identidad (DNI)"},
+  {"code": "4", "description": "Carnet de extranjería"},
+  {"code": "6", "description": "Registro Único de Contribuyentes (RUC)"},
+  {"code": "7", "description": "Pasaporte"},
+  {"code": "A", "description": "Cédula diplomática de identidad"},
+  {"code": "B", "description": "Documento de identidad del país de residencia - no domiciliado"},
+  {"code": "C", "description": "Tax Identification Number (TIN) - doc. trib. PP.NN."},
+  {"code": "D", "description": "Identification Number (IN) - doc. trib. PP.JJ."},
+  {"code": "E", "description": "TAM - Tarjeta Andina de Migración"},
+  {"code": "F", "description": "Permiso Temporal de Permanencia (PTP)"},
+  {"code": "G", "description": "Salvoconducto"},
+  {"code": "H", "description": "Carné de Permiso Temporal de Permanencia (CPP)"}
+ ],
+ "credit_note_reasons": [
+  {"code": "01", "description": "Anulación de la operación"},
+  {"code": "02", "description": "Anulación por error en el RUC"},
+  {"code": "03", "description": "Corrección por error en la descripción o atención de reclamo respecto de bienes adquiridos o servicios prestados"},
+  {"code": "04", "description": "Descuento global"},
+  {"code": "05", "description": "Descuento por ítem"},
+  {"code": "06", "description": "Devolución total"},
+  {"code": "07", "description": "Devolución por ítem"},
+  {"code": "08", "description": "Bonificación"},
+  {"code": "09", "description": "Disminución en el valor"},
+  {"code": "10", "description": "Otros conceptos"},
+  {"code": "11", "description": "Ajustes de operaciones de exportación"},
+  {"code": "12", "description": "Ajustes afectos al IVAP"},
+  {"code": "13", "description": "Corrección o modificación del monto neto pendiente de pago y/o la(s) fecha(s) de vencimiento del pago"}
+ ],
+ "debit_note_reasons": [
+  {"code": "01", "description": "Intereses por mora"},
+  {"code": "02", "description": "Aumento en el valor"},
+  {"code": "03", "description": "Penalidades / otros conceptos"}
+ ]
+}
