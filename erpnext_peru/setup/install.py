@@ -14,6 +14,7 @@ CATALOGUE_DOCTYPES = {
 	"identity_document_types": "SUNAT Identity Document Type",
 	"credit_note_reasons": "SUNAT Credit Note Reason",
 	"debit_note_reasons": "SUNAT Debit Note Reason",
+	"igv_affectation_types": "SUNAT IGV Affectation Type",
 }
 
 

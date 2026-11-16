@@ -30,6 +30,10 @@ ITEM_GROUP = "_Test Peru Items"
 UOM = "_Test Peru Unit"
 
 
+PCGE_COMPANY = "_Test PCGE SAC"
+PCGE_ABBR = "_TPG"
+
+
 def make_ruc(body: int | str, prefix: str = "20") -> str:
 	"""A syntactically valid RUC built from ``prefix`` and an 8-digit body."""
 	first_ten = f"{prefix}{int(body):08d}"
@@ -106,6 +110,30 @@ def ensure_fixtures():
 		).insert()
 
 	frappe.db.commit()  # nosemgrep: fixtures are created once for the whole run
+
+
+def ensure_pcge_company():
+	"""A Peruvian company whose chart is the PCGE, with the IGV templates. Created once."""
+	from erpnext_peru.accounts.igv import setup_igv
+	from erpnext_peru.accounts.pcge import apply_pcge
+
+	ensure_fixtures()
+	_ensure_company(PCGE_COMPANY, PCGE_ABBR, "Peru", "PEN", make_ruc(60000003))
+	if not frappe.db.exists("Account", {"company": PCGE_COMPANY, "account_number": "40111"}):
+		apply_pcge(PCGE_COMPANY, replace_existing=True)
+	setup_igv(PCGE_COMPANY)
+	# With perpetual inventory on, ERPNext demands stock accounts (Stock Received
+	# But Not Billed...) on every purchase invoice. How inventory is booked under
+	# the PCGE (purchases through 60/61 or perpetual) is left to the accountant,
+	# so the test company runs with it off.
+	if frappe.db.get_value("Company", PCGE_COMPANY, "enable_perpetual_inventory"):
+		frappe.db.set_value("Company", PCGE_COMPANY, "enable_perpetual_inventory", 0)
+		frappe.clear_cache(doctype="Company")
+	frappe.db.commit()  # nosemgrep: fixtures are created once for the whole run
+
+
+def pcge_account(code: str, company: str = PCGE_COMPANY) -> str:
+	return frappe.db.get_value("Account", {"company": company, "account_number": code}, "name")
 
 
 def _ensure_tree(doctype, name, name_field, parent_field):

@@ -1,0 +1,120 @@
+{
+ "title": "Plan Contable General Empresarial (PCGE) Modificado 2019 - Catálogo de cuentas",
+ "issuer": "Consejo Normativo de Contabilidad, Ministerio de Economía y Finanzas (MEF)",
+ "approved_by": "Resolución CNC N.° 002-2019-EF/30 (El Peruano, 24 de mayo de 2019); uso obligatorio desde el 1 de enero de 2020",
+ "source_url": "https://www.mef.gob.pe/contenidos/conta_publ/pcge/PCGE_2019.pdf",
+ "retrieved": "2026-11-16",
+ "scope": "Capítulo II, catálogo de cuentas: elementos 1 a 8, hasta cinco dígitos (seis en las cuentas 682 y 683). El catálogo no desarrolla el elemento 9 (contabilidad analítica de explotación) ni el elemento 0 (cuentas de orden): cada entidad los define.",
+ "transcription": "Las cuentas se transcribieron tal como están impresas y luego se aplicaron las correcciones listadas abajo. Los nombres de las cuentas de dos dígitos, impresos en mayúsculas, se pasaron a mayúscula inicial.",
+ "verification": "Árbol validado (sin códigos repetidos, todo código tiene su cuenta superior, orden del documento igual al orden numérico). Los 1 218 códigos de último nivel se compararon con una copia independiente del plan: coinciden todos salvo los corregidos aquí.",
+ "corrections": [
+  {
+   "printed_code": "27233",
+   "name": "Costo de financiación",
+   "corrected_code": "27243",
+   "reason": "printed twice; this one sits under 2724"
+  },
+  {
+   "printed_code": "30221",
+   "name": "Costo",
+   "corrected_code": "30111",
+   "reason": "printed under 3011 with the codes of 3022"
+  },
+  {
+   "printed_code": "30224",
+   "name": "Valor razonable",
+   "corrected_code": "30114",
+   "reason": "printed under 3011 with the codes of 3022"
+  },
+  {
+   "printed_code": "33404",
+   "name": "Planta productora en producción - Valor razonable",
+   "corrected_code": "36404",
+   "reason": "sits under 3640"
+  },
+  {
+   "printed_code": "38472",
+   "name": "Herramientas - Revaluación",
+   "corrected_code": "36472",
+   "reason": "sits under 3647"
+  },
+  {
+   "printed_code": "38473",
+   "name": "Unidades de reemplazo - costo",
+   "corrected_code": "36473",
+   "reason": "sits under 3647"
+  },
+  {
+   "printed_code": "38474",
+   "name": "Unidades de reemplazo - Revaluación",
+   "corrected_code": "36474",
+   "reason": "sits under 3647"
+  },
+  {
+   "printed_code": "38352",
+   "name": "Revaluación",
+   "corrected_code": "39352",
+   "reason": "sits under 3935"
+  },
+  {
+   "printed_code": "63432",
+   "name": "Operativo",
+   "corrected_code": "63422",
+   "reason": "sits under 6342"
+  },
+  {
+   "printed_code": "683351",
+   "name": "Costo",
+   "corrected_code": "683151",
+   "reason": "sits under 68315"
+  },
+  {
+   "printed_code": "6882",
+   "name": "Desvalorización de propiedad de inversión",
+   "corrected_code": "6881",
+   "reason": "printed twice; its sub-accounts are 68812 and 68813"
+  },
+  {
+   "printed_code": "70111",
+   "name": "Terceros",
+   "corrected_code": "70121",
+   "reason": "printed twice; this one sits under 7012"
+  },
+  {
+   "printed_code": "70112",
+   "name": "Relacionadas",
+   "corrected_code": "70122",
+   "reason": "printed twice; this one sits under 7012"
+  },
+  {
+   "code": "1051",
+   "printed_name": "Otro equivalentes de efectivo",
+   "corrected_name": "Otros equivalentes de efectivo",
+   "reason": "typographical"
+  },
+  {
+   "code": "3325",
+   "printed_name": "Mejoras en locales arrendados.",
+   "corrected_name": "Mejoras en locales arrendados",
+   "reason": "typographical"
+  },
+  {
+   "code": "441",
+   "printed_name": "Accionistas ( socios, partícipes)",
+   "corrected_name": "Accionistas (socios, partícipes)",
+   "reason": "typographical"
+  },
+  {
+   "code": "6452",
+   "printed_name": "intereses - fraccionamiento",
+   "corrected_name": "Intereses - fraccionamiento",
+   "reason": "typographical"
+  },
+  {
+   "code": "36473",
+   "printed_name": "Unidades de reemplazo - costo",
+   "corrected_name": "Unidades de reemplazo - Costo",
+   "reason": "typographical"
+  }
+ ]
+}

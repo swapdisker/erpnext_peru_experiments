@@ -98,6 +98,7 @@ def before_submit(doc, method=None):
 		return
 
 	_validate_issuer(doc)
+	_validate_igv_is_stated(doc)
 	_validate_customer_identity(doc)
 	_validate_note(doc)
 
@@ -283,6 +284,31 @@ def _validate_issuer(doc):
 		validate_ruc(tax_id)
 	except IdentityError as error:
 		throw_identity_error(error)
+
+
+def _validate_igv_is_stated(doc):
+	"""Once the company has IGV templates, an invoice must say how it is treated for IGV.
+
+	ERPNext only pre-selects the default tax template in the browser. A document
+	created through the API, an import or another app arrives with no tax rows
+	and would otherwise be issued without IGV by omission. Exempt, unaffected
+	and export sales state it with one of the 0% templates.
+	"""
+	if doc.get("taxes"):
+		return
+	has_igv_setup = frappe.db.exists(
+		"Sales Taxes and Charges Template",
+		{"company": doc.company, "disabled": 0, "pe_igv_affectation_type": ("is", "set")},
+	)
+	if not has_igv_setup:
+		return
+	frappe.throw(
+		_(
+			"This invoice has no IGV line. Select a tax template: IGV 18% for taxed sales, or one of the 0% templates for exempt, unaffected or export sales."
+		),
+		exc=ComprobanteError,
+		title=_("IGV Not Stated"),
+	)
 
 
 def _validate_customer_identity(doc):

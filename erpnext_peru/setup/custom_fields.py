@@ -54,6 +54,16 @@ CUSTOM_FIELDS = {
 			"description": "Six-digit district code. Mandatory for electronic invoicing.",
 		},
 	],
+	"Sales Taxes and Charges Template": [
+		{
+			"fieldname": "pe_igv_affectation_type",
+			"label": "IGV Affectation Type",
+			"fieldtype": "Link",
+			"options": "SUNAT IGV Affectation Type",
+			"insert_after": "tax_category",
+			"description": "SUNAT catalogue 07: how the sales that use this template are treated for IGV.",
+		},
+	],
 	"Sales Invoice": [
 		{
 			"fieldname": "pe_sunat_section",

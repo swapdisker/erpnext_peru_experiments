@@ -20,9 +20,10 @@
 Peruvian localization for [ERPNext](https://github.com/frappe/erpnext), as a separate Frappe app.
 Nothing in ERPNext core is modified, so ERPNext can be upgraded independently.
 
-> **Status: prototype, first stage (v0.1.0).** It covers identity documents, comprobante
-> fields, voucher numbering and SUNAT catalogues. It does **not** yet contain the PCGE chart of
-> accounts, IGV tax templates, electronic invoicing, SIRE registers or the CONCAR import tools.
+> **Status: prototype, second stage (v0.2.0).** It covers identity documents, comprobante
+> fields, voucher numbering, SUNAT catalogues, the PCGE 2019 chart of accounts and the IGV tax
+> templates. It does **not** yet contain electronic invoicing, SIRE registers or the CONCAR
+> import tools.
 > Nothing here has been reviewed by an accountant. Read [docs/HANDOVER.md](docs/HANDOVER.md)
 > before using it with real data.
 
@@ -37,7 +38,9 @@ Nothing in ERPNext core is modified, so ERPNext can be upgraded independently.
 | Address | Ubigeo field. District, province and department are filled from it. An address in Peru without Ubigeo gives a warning. |
 | Sales Invoice | Comprobante type (01 Factura, 03 Boleta, 07 Nota de crédito, 08 Nota de débito), series, and a correlative number assigned on submission. Credit/debit note reason (catalogues 09 and 10) and reference to the modified voucher. |
 | Purchase Invoice | Type, series and number of the supplier's document, validated and protected against duplicates. |
-| Catalogues | SUNAT catalogues 01, 06, 09 and 10 as editable masters. |
+| Chart of accounts | PCGE Modificado 2019 (MEF): 1,764 accounts. "Apply PCGE 2019" on the Company form adds the missing accounts, or replaces the standard chart while the company has no entries. |
+| IGV | "Set Up IGV" on the Company form creates the 18% template and the 0% templates for exonerado, inafecto and exportación, for sales and purchases, posting to 40111. |
+| Catalogues | SUNAT catalogues 01, 06, 07, 09 and 10 as editable masters. |
 | Utilities | Amount in Spanish words (`SON: ... CON 00/100 SOLES`). |
 
 ### Rules enforced when a Sales Invoice is submitted
@@ -45,6 +48,7 @@ Nothing in ERPNext core is modified, so ERPNext can be upgraded independently.
 Only for companies whose country is **Peru**. Opening invoices are exempt.
 
 - The company must have a valid RUC.
+- Once the IGV templates exist, the invoice must carry a tax line (18% or one of the 0% ones).
 - A **Factura** needs a customer identified with a RUC (or type `0`, non-domiciled, for exports).
 - A **Boleta de venta** above **S/ 700.00** needs the customer's identity document.
 - A credit or debit note needs a reason and the voucher it modifies. Its series starts with `F`
@@ -69,9 +73,10 @@ Requires ERPNext v15. Then:
 
 1. Enter the RUC in the **Tax ID** of the company.
 2. Turn on **Disable Rounded Total** in Global Defaults: comprobantes are issued to the céntimo.
-3. Create the series in **SUNAT Voucher Series** (for example `F001` for type `01`, `B001` for
+3. On the company, open the **Peru** menu and run **Apply PCGE 2019**, then **Set Up IGV**.
+4. Create the series in **SUNAT Voucher Series** (for example `F001` for type `01`, `B001` for
    `03`). Set **Last Number Issued** to continue an existing numbering.
-4. Load the Ubigeo master (see `erpnext_peru/setup/ubigeo.py`): the district list is not shipped yet.
+5. Load the Ubigeo master (see `erpnext_peru/setup/ubigeo.py`): the district list is not shipped yet.
 
 ## Tests
 
@@ -100,10 +105,10 @@ SUNAT's public resolutions; each data file names its source.
 
 Localización peruana para ERPNext, como una app de Frappe independiente.
 
-> **Estado: prototipo, primera etapa (v0.1.0).** Incluye documentos de identidad, campos del
-> comprobante, numeración y catálogos de SUNAT. **No** incluye todavía el PCGE, las plantillas
-> de IGV, la facturación electrónica, los registros SIRE ni las herramientas de importación
-> desde CONCAR. Ningún contador ha revisado esta versión. Lea [docs/HANDOVER.md](docs/HANDOVER.md)
+> **Estado: prototipo, segunda etapa (v0.2.0).** Incluye documentos de identidad, campos del
+> comprobante, numeración, catálogos de SUNAT, el PCGE 2019 y las plantillas de IGV. **No**
+> incluye todavía la facturación electrónica, los registros SIRE ni las herramientas de
+> importación desde CONCAR. Ningún contador ha revisado esta versión. Lea [docs/HANDOVER.md](docs/HANDOVER.md)
 > antes de usarla con datos reales.
 
 ## Qué hace
@@ -117,6 +122,11 @@ Localización peruana para ERPNext, como una app de Frappe independiente.
   asignado al validar. Motivo de la nota (catálogos 09 y 10) y comprobante que modifica.
 - **Factura de compra:** tipo, serie y número del comprobante del proveedor, con control de
   duplicados.
+- **Plan de cuentas:** PCGE Modificado 2019 (MEF). En la compañía, menú **Perú → Aplicar PCGE
+  2019**: agrega las cuentas que faltan, o reemplaza el plan estándar si la compañía aún no
+  tiene asientos.
+- **IGV:** menú **Perú → Configurar IGV**: crea la plantilla de 18% y las de 0% (exonerado,
+  inafecto, exportación) para ventas y compras, con la cuenta 40111.
 
 ## Reglas al validar una venta (solo compañías peruanas)
 
@@ -135,6 +145,7 @@ número no se consume. Un comprobante anulado conserva su número y no se puede 
 
 1. Ingrese el RUC en el **Tax ID** de la compañía.
 2. Active **Disable Rounded Total** en Global Defaults: los comprobantes se emiten al céntimo.
-3. Cree las series en **Series de Comprobantes SUNAT** (por ejemplo `F001` para el tipo `01`).
+3. En la compañía, abra el menú **Perú** y ejecute **Aplicar PCGE 2019** y luego **Configurar IGV**.
+4. Cree las series en **Series de Comprobantes SUNAT** (por ejemplo `F001` para el tipo `01`).
    Use **Último número emitido** para continuar la numeración de un sistema anterior.
-4. Cargue el maestro de Ubigeo (ver `erpnext_peru/setup/ubigeo.py`).
+5. Cargue el maestro de Ubigeo (ver `erpnext_peru/setup/ubigeo.py`).

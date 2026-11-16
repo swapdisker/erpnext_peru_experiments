@@ -12,6 +12,8 @@ after_migrate = "erpnext_peru.setup.install.after_migrate"
 # The tests need a site on which the ERPNext setup wizard has run.
 before_tests = "erpnext.setup.utils.before_tests"
 
+doctype_js = {"Company": "public/js/company.js"}
+
 doc_events = {
 	"Company": {
 		"validate": "erpnext_peru.overrides.company.validate",

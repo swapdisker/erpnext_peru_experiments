@@ -51,6 +51,10 @@ def source_strings() -> set[str]:
 						and isinstance(value, ast.Constant)
 					):
 						strings.add(value.value)
+	# __("...") calls in the form scripts
+	for path in glob.glob(os.path.join(APP_DIR, "public", "js", "*.js")):
+		with open(path, encoding="utf-8") as handle:
+			strings.update(re.findall(r'__\(\s*"((?:[^"\\]|\\.)*)"', handle.read()))
 	for path in glob.glob(os.path.join(APP_DIR, "erpnext_peru", "doctype", "*", "*.json")):
 		with open(path, encoding="utf-8") as handle:
 			doctype = json.load(handle)
