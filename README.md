@@ -1,5 +1,22 @@
 # ERPNext Peru
 
+> # ⚠️ DO NOT USE — LOCAL EXPERIMENT
+>
+> **This repository is a personal, local experiment. It is not a product and must not be
+> installed on any site that holds real data.**
+>
+> - It is an unfinished prototype. Expect bugs, wrong behaviour and code that will be rewritten.
+> - No accountant has reviewed it. Its rules may be incorrect under Peruvian tax law.
+> - Its screens have barely been tried in a browser, and it has never run in production.
+> - It can block invoices and assign legal document numbers. A mistake there has real consequences.
+> - There is no support, no warranty and no promise that later versions will be compatible.
+>
+> If you need a Peruvian localization for ERPNext, do not start from this code.
+>
+> **NO USAR — EXPERIMENTO LOCAL.** Este repositorio es un experimento personal e inconcluso.
+> Puede tener errores y reglas tributarias incorrectas, y ningún contador lo ha revisado. No lo
+> instale en un sitio con datos reales.
+
 Peruvian localization for [ERPNext](https://github.com/frappe/erpnext), as a separate Frappe app.
 Nothing in ERPNext core is modified, so ERPNext can be upgraded independently.
 
