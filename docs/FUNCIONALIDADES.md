@@ -245,7 +245,7 @@ Valores predeterminados que se asignan si están vacíos: por cobrar `1212`, por
 ingresos `70121` y redondeo `7599` (provisional). Caja, banco, costo de ventas, diferencia de
 cambio y cuentas de existencias quedan para el contador.
 
-La aplicación tarda alrededor de medio minuto.
+La aplicación se ejecuta en segundo plano y tarda alrededor de medio minuto; la página espera y luego muestra el resultado. Si falla, no se modifica nada y se muestra el motivo. Requiere un proceso de trabajo en segundo plano (worker), presente en toda instalación estándar.
 
 ### Las subcuentas propias de la compañía
 

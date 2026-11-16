@@ -324,6 +324,50 @@ M = [
 		"b",
 		"test_sales_invoice",
 	),
+	(
+		"accounts/api.py",
+		"return frappe.cache.get_value(_state_key(company), expires=True)",
+		"return frappe.cache.get_value(_state_key(company))",
+		"b",
+		"test_pcge_job",
+	),
+	(
+		"accounts/api.py",
+		'\t\tfrappe.db.rollback(save_point="erpnext_peru_pcge_job")',
+		"\t\tpass",
+		"b",
+		"test_pcge_job",
+	),
+	(
+		"accounts/api.py",
+		'\t\tfrappe.has_permission("Company", "write", company, throw=True)',
+		"\t\tpass",
+		"b",
+		"test_pcge_job",
+	),
+	(
+		"accounts/api.py",
+		'\tif get_job_state(company).get("status") in IN_PROGRESS:',
+		"\tif False:",
+		"b",
+		"test_pcge_job",
+	),
+	("accounts/api.py", "> JOB_STALE_AFTER:", "> JOB_STALE_AFTER * 2:", "b", "test_pcge_job"),
+	(
+		"accounts/api.py",
+		"\tapply_pcge(company, replace_existing=replace, dry_run=True)",
+		"\tpass",
+		"b",
+		"test_pcge_job",
+	),
+	(
+		"accounts/api.py",
+		"\t\t_set_state(company, status=STATUS_FAILED, error=message)",
+		"\t\t_set_state(company, status=STATUS_DONE, error=message)",
+		"b",
+		"test_pcge_job",
+	),
+	("accounts/api.py", "\t\tdeduplicate=True,", "\t\tdeduplicate=False,", "b", "test_pcge_job"),
 ]
 
 

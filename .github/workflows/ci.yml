@@ -1,6 +1,7 @@
-# NOTE: the unit job passes. The integration job has not completed a run yet:
-# its first attempt stopped at the database client (see "Database client
-# settings"); the steps after it are still unproven.
+# The unit job and the version-15 integration job pass.
+# The version-16 entry is experimental: the app was never run on v16, so the
+# entry may fail without turning the run red. Read its log, do not trust its
+# colour. Remove "experimental" once it passes and v16 is meant to be supported.
 name: CI
 
 on:
@@ -32,8 +33,9 @@ jobs:
           erpnext_peru.tests.test_translations
 
   integration:
-    name: Integration tests (ERPNext ${{ matrix.branch }})
+    name: Integration tests (ERPNext ${{ matrix.branch }}${{ matrix.experimental && ', experimental' || '' }})
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -41,9 +43,16 @@ jobs:
           - branch: version-15
             python: "3.12"
             node: "20"
+            mariadb: "10.11"
+            experimental: false
+          - branch: version-16
+            python: "3.14"
+            node: "24"
+            mariadb: "11.8"
+            experimental: true
     services:
       mariadb:
-        image: mariadb:10.11
+        image: mariadb:${{ matrix.mariadb }}
         env:
           MARIADB_ROOT_PASSWORD: root
         ports:

@@ -92,17 +92,10 @@ erpnext_peru.apply_pcge = function (frm) {
 							method: "erpnext_peru.accounts.api.apply_pcge_to_company",
 							args: args,
 							freeze: true,
-							freeze_message: __("Creating the accounts. This can take a minute."),
 							callback(result) {
-								if (!result.message) {
-									return;
+								if (result.message) {
+									erpnext_peru.wait_for_pcge(frm);
 								}
-								frappe.msgprint({
-									title: __("PCGE applied"),
-									indicator: result.message.conflicts.length ? "orange" : "green",
-									message: erpnext_peru.pcge_report_html(result.message),
-								});
-								frm.reload_doc();
 							},
 						});
 					});
@@ -112,6 +105,65 @@ erpnext_peru.apply_pcge = function (frm) {
 		__("Apply PCGE 2019"),
 		__("Preview")
 	);
+};
+
+// The accounts are created by a background job: ask for its state until it ends.
+erpnext_peru.wait_for_pcge = function (frm) {
+	const interval = 3000;
+	const give_up_after = 20 * 60 * 1000;
+	const started = Date.now();
+	frappe.dom.freeze(
+		__("Creating the accounts in the background. This can take a few minutes; keep this page open.")
+	);
+	const finish = (options) => {
+		frappe.dom.unfreeze();
+		frappe.msgprint(options);
+	};
+	const check = () => {
+		frappe.call({
+			method: "erpnext_peru.accounts.api.pcge_job_status",
+			args: { company: frm.doc.name },
+			callback(response) {
+				const state = response.message || {};
+				if (state.status === "done") {
+					finish({
+						title: __("PCGE applied"),
+						indicator: state.report.conflicts.length ? "orange" : "green",
+						message: erpnext_peru.pcge_report_html(state.report),
+					});
+					frm.reload_doc();
+				} else if (state.status === "failed") {
+					finish({
+						title: __("The PCGE could not be applied"),
+						indicator: "red",
+						message:
+							frappe.utils.escape_html(state.error || "") +
+							`<p>${__("Nothing was changed.")}</p>`,
+					});
+				} else if (Date.now() - started > give_up_after) {
+					finish({
+						title: __("Still working"),
+						indicator: "orange",
+						message: __(
+							"It is taking longer than expected. The job continues in the background: reload this page in a few minutes and check the chart of accounts."
+						),
+					});
+				} else {
+					setTimeout(check, interval);
+				}
+			},
+			error() {
+				finish({
+					title: __("Still working"),
+					indicator: "orange",
+					message: __(
+						"It is taking longer than expected. The job continues in the background: reload this page in a few minutes and check the chart of accounts."
+					),
+				});
+			},
+		});
+	};
+	setTimeout(check, interval);
 };
 
 erpnext_peru.setup_igv = function (frm) {

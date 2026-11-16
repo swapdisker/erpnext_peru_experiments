@@ -234,7 +234,7 @@ Company defaults set if empty: receivable `1212`, payable `4212`, income `70121`
 `7599` (provisional). Cash, bank, cost of sales, exchange difference and stock accounts are left
 for the accountant.
 
-Applying takes about half a minute.
+Applying runs in the background and takes about half a minute; the page waits and then shows the result. If it fails, nothing is changed and the reason is shown. It needs a background worker, which every standard installation has.
 
 ### The company's own sub-accounts
 

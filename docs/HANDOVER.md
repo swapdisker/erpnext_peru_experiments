@@ -28,7 +28,7 @@ the user's side.
 
 | Proposal item | State |
 |---|---|
-| Step 2 — custom app, GPL-3.0, tests | Built. CI: the unit job passes; the integration job **has not completed a run yet**. |
+| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v15) jobs pass. A v16 job exists, marked experimental; its result is unknown. |
 | Step 3 — PCGE 2019 chart, apply / merge, defaults | Built and tested. Account types and defaults await the accountant. |
 | Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
 | Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
@@ -107,6 +107,16 @@ comprobante must not change if the master is corrected later.
 - Both have a dry run that goes through the same code path and returns the same report, so
   the preview cannot drift from the real run. There is a test for that.
 
+**The button on the Company form** (`accounts/api.py`). The request does a dry run, so
+that whatever can be known in advance is refused on screen, then queues `run_pcge_job` and
+returns. The job works inside a savepoint: on any error it rolls back to it, writes the
+Error Log and records the message, so a failed run leaves the chart as it was. One job per
+company at a time. Two things here were found by tests and are easy to undo by accident:
+the state is read with `expires=True`, because otherwise Frappe keeps the first answer for
+the rest of the request and a state written a moment later is never seen; and the role check
+is the module's own `_only_managers`, because `frappe.only_for` lets everybody through while
+tests run. It also asks for write permission on the company, which honours User Permissions.
+
 ### IGV
 
 One 18% row on account 40111 for taxed operations; a 0% row on the same account for exonerado,
@@ -145,13 +155,16 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **247 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
-  on two sites, one of them a fresh install.
-- **Mutation check: 59 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **259 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+  on two sites, one of them a fresh install, and in CI on GitHub (v15).
+- **Mutation check: 67 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run as two batches (35 and 24). The combined script
+  list is `tools/mutation_check.py`. It was run as three batches (35, 24, and the 8 for the background job). The combined script
   was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
+- **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
+  worker on a site outside the test runner: the request returned "queued", a second request
+  was refused, the worker created 1,774 accounts in about 30 seconds and the state read "done".
 - **Concurrency:** 8 database connections allocating 40 numbers in parallel produce exactly
   1..40; rolled-back allocations leave no gap; 4 invoices submitted in parallel get 4
   consecutive numbers.
@@ -168,11 +181,11 @@ Not shipped, because no official source could be confirmed or reached:
 ### Not verified
 
 - **The screens** (section 9).
-- **ERPNext v16.** It needs Python 3.14 and Node 24, which the test machine did not have.
-- **The CI integration job.** The unit job (lint and pure tests) passes on GitHub. The
-  integration job failed on its first run at the database client step (TLS required by the
-  client, not offered by the service container). A fix was pushed; the steps after it have
-  never run in CI.
+- **ERPNext v16.** It needs Python 3.14, Node 24 and MariaDB 11.8, which the test machine did
+  not have. CI has a v16 job, marked experimental so that it cannot turn the run red. It had
+  not run when this was written: read its log before believing anything about v16.
+- **The background job from the browser.** The job itself was run through a real queue and
+  worker (below). The dialog that waits for it is JavaScript and has only been syntax-checked.
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
   machine: it stops while creating its own fixtures, identically on a site without this app.
   That standard behaviour is unaffected rests on this app's tests that non-Peruvian companies
@@ -270,9 +283,11 @@ Found while building. Some are settings to change, some are traps.
   SUNAT rules that takes a comunicación de baja or a credit note. It belongs with e-invoicing.
 - **Identity duplicates are checked by the application, not by a database constraint.** Two
   users saving the same new RUC in the same instant could both succeed.
-- **Applying the PCGE runs inside one web request** and took about 25 seconds for 1,774
-  accounts on the test machine. A slow server could time out; it would then need a
-  background job.
+- **Applying the PCGE needs a background worker.** It runs as a job on the `long` queue
+  (about 30 seconds for 1,774 accounts on the test machine) while the form asks for its state
+  every 3 seconds. With no worker running the state stays "queued"; after 35 minutes it is
+  reported as failed and a new request is accepted. The state lives in the Redis cache for 24
+  hours: `bench clear-cache` during a run loses the message, not the job.
 - **Replacing a chart deletes accounts.** It is refused when the company has ledger entries,
   and every deletion passes ERPNext's link checks, but it is the one destructive action here.
 - **Uninstalling** leaves the custom fields and their data.
@@ -391,7 +406,8 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 
 1. **Click through the screens** on a v15 site, starting with the "Perú" menu. Half a day,
    and it removes the largest unknown.
-2. **Get the CI integration job green.** It has not completed a run; fix what each attempt shows.
+2. **Read the v16 job in CI.** The v15 jobs are green. The v16 job is allowed to fail; decide
+   from its log whether v16 is in scope and what it takes.
 3. **Accountant session on section 6.** Decisions 10–15 shape everything that posts.
 4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
 5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
@@ -433,7 +449,7 @@ erpnext_peru/
   accounts/
     pcge.py                     apply_pcge, import_client_accounts
     igv.py                      setup_igv
-    api.py                      methods the Company form calls
+    api.py                      methods the Company form calls; the PCGE background job
   public/js/company.js          the "Perú" menu on the Company form
   setup/
     custom_fields.py            every pe_* field
@@ -458,3 +474,5 @@ erpnext_peru/
 | 0.2.0 | `Add PCGE 2019 chart of accounts and IGV tax templates` | PCGE, IGV, catalogue 07, the "Perú" menu, the tax-line rule on sales invoices. |
 | 0.2.0 | this commit | Handover rewritten; PCGE transcription, build script and mutation list added to the repository. |
 | 0.2.0 | `Add a Peru workspace to the sidebar` | Sidebar entry with shortcuts and cards. |
+| — | `CI: let the MariaDB client connect without TLS` | First green integration run. |
+| 0.2.0 | `Apply the PCGE as a background job; add a v16 CI job` | Job, state and polling; own role check; experimental v16 matrix entry. |
