@@ -1,0 +1,187 @@
+10|EFECTIVO Y EQUIVALENTES DE EFECTIVO
+101|Caja
+102|Fondos fijos
+103|Efectivo y cheques en tránsito
+1031|Efectivo en tránsito
+1032|Cheques en tránsito
+104|Cuentas corrientes en instituciones financieras
+1041|Cuentas corrientes operativas
+1042|Cuentas corrientes para fines específicos
+105|Otros equivalentes de efectivo
+1051|Otro equivalentes de efectivo
+106|Depósitos en instituciones financieras
+1061|Depósitos de ahorro
+1062|Depósitos a plazo
+107|Fondos sujetos a restricción
+1071|Fondos en garantía
+1072|Fondos retenidos por mandato de la autoridad
+1073|Otros fondos sujetos a restricción
+11|INVERSIONES FINANCIERAS
+111|Inversiones mantenidas para negociación
+1111|Valores emitidos o garantizados por el Estado
+11111|Costo
+11112|Valor Razonable
+1112|Valores emitidos por el sistema financiero
+11121|Costo
+11122|Valor Razonable
+1113|Valores emitidos por entidades
+11131|Costo
+11132|Valor Razonable
+1114|Otros títulos representativos de deuda
+11141|Costo
+11142|Valor Razonable
+1115|Participaciones en entidades
+11151|Costo
+11152|Valor Razonable
+112|Otras inversiones financieras
+1121|Otras inversiones financieras
+11211|Costo
+11212|Valor Razonable
+113|Activos financieros – Acuerdo de compra
+1131|Inversiones mantenidas para negociación – Acuerdo de compra
+11311|Costo
+11312|Valor Razonable
+1132|Otras inversiones financieras
+11321|Costo
+11322|Valor Razonable
+12|CUENTAS POR COBRAR COMERCIALES – TERCEROS
+121|Facturas, boletas y otros comprobantes por cobrar
+1211|No emitidas
+1212|Emitidas en cartera
+1213|En cobranza
+1214|En descuento
+122|Anticipos de clientes
+123|Letras por cobrar
+1232|En cartera
+1233|En cobranza
+1234|En descuento
+13|CUENTAS POR COBRAR COMERCIALES – RELACIONADAS
+131|Facturas, boletas y otros comprobantes por cobrar
+1311|No emitidas
+1312|En cartera
+1313|En cobranza
+1314|En descuento
+132|Anticipos recibidos
+1321|Anticipos recibidos
+133|Letras por cobrar
+1331|En cartera
+1332|En cobranza
+1333|En descuento
+14|CUENTAS POR COBRAR AL PERSONAL, A LOS ACCIONISTAS (SOCIOS) y DIRECTORES
+141|Personal
+1411|Préstamos
+1412|Adelanto de remuneraciones
+1413|Entregas a rendir cuenta
+1419|Otras cuentas por cobrar al personal
+142|Accionistas (o socios)
+1421|Suscripciones por cobrar a socios o accionistas
+1422|Préstamos
+143|Directores
+1431|Préstamos
+1432|Adelanto de dietas
+1433|Entregas a rendir cuenta
+149|Diversas
+16|CUENTAS POR COBRAR DIVERSAS – TERCEROS
+161|Préstamos
+1611|Con garantía
+1612|Sin garantía
+162|Reclamaciones a terceros
+1621|Compañías aseguradoras
+1622|Transportadoras
+1623|Servicios públicos
+1624|Tributos
+1629|Otras
+163|Intereses, regalías y dividendos
+1631|Intereses
+1632|Regalías
+1633|Dividendos
+164|Depósitos otorgados en garantía
+1641|Préstamos de instituciones financieras
+1642|Préstamos de instituciones no financieras
+1643|Depósitos en garantía por alquileres
+1649|Otros depósitos en garantía
+165|Venta de activo inmovilizado
+1651|Inversión mobiliaria
+1652|Propiedades de inversión
+1653|Propiedad, planta y equipo
+1654|Intangibles
+1655|Activos biológicos
+1659|Otros activos inmovilizados
+166|Activos por instrumentos financieros
+1661|Instrumentos financieros primarios
+16611|Costo
+16612|Valor razonable
+1662|Instrumentos financieros derivados
+16621|Costo
+16622|Valor razonable
+167|Tributos por acreditar
+1671|Pagos a cuenta del impuesto a la renta
+1672|Pagos a cuenta de ITAN
+1673|IGV por acreditar en compras
+1674|IGV por acreditar no domiciliados
+1675|Obras por impuestos
+169|Otras cuentas por cobrar diversas
+1691|Entregas a rendir cuenta a terceros
+1699|Otras cuentas por cobrar diversas
+17|CUENTAS POR COBRAR DIVERSAS – RELACIONADAS
+171|Préstamos
+1711|Con garantía
+1712|Sin garantía
+173|Intereses, regalías y dividendos
+1731|Intereses
+1732|Regalías
+1733|Dividendos
+174|Depósitos otorgados en garantía
+1741|Préstamos de instituciones financieras
+1742|Préstamos de instituciones no financieras
+1743|Depósitos en garantía por alquileres
+1749|Otros depósitos en garantía
+175|Venta de activo inmovilizado
+1751|Inversión mobiliaria
+1752|Propiedades de inversión
+1753|Propiedad, planta y equipo
+1754|Intangibles
+1755|Activos biológicos
+1759|Otros activos inmovilizados
+176|Activos por instrumentos financieros
+1761|Instrumentos financieros primarios
+17611|Costo
+17612|Valor razonable
+1762|Instrumentos financieros derivados
+17621|Costo
+17622|Valor razonable
+179|Otras cuentas por cobrar diversas
+18|SERVICIOS Y OTROS CONTRATADOS POR ANTICIPADO
+181|Costos financieros
+182|Seguros
+183|Alquileres
+184|Primas pagadas por opciones
+185|Mantenimiento de activos inmovilizados
+189|Otros gastos contratados por anticipado
+19|ESTIMACIÓN DE CUENTAS DE COBRANZA DUDOSA
+191|Cuentas por cobrar comerciales – Terceros
+1911|Facturas, boletas y otros comprobantes por cobrar
+1913|Letras por cobrar
+192|Cuentas por cobrar comerciales – Relacionadas
+1921|Facturas, boletas y otros comprobantes por cobrar
+1923|Letras por cobrar
+193|Cuentas por cobrar al personal, a los accionistas (socios) y directores
+1931|Personal
+1932|Accionistas (o socios)
+1933|Directores
+1939|Diversas
+194|Cuentas por cobrar diversas – Terceros
+1941|Préstamos
+1942|Reclamaciones a terceros
+1943|Intereses, regalías y dividendos
+1944|Depósitos otorgados en garantía
+1945|Venta de activo inmovilizado
+1946|Activos por instrumentos financieros
+1949|Otras cuentas por cobrar diversas
+195|Cuentas por cobrar diversas – Relacionadas
+1951|Préstamos
+1953|Intereses, regalías y dividendos
+1954|Depósitos otorgados en garantía
+1955|Venta de activo inmovilizado
+1956|Activos por instrumentos financieros
+1959|Otras cuentas por cobrar diversas

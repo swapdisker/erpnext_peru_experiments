@@ -1,212 +1,450 @@
-# Handover notes — erpnext_peru v0.2.0 (prototype, second stage)
+# erpnext_peru — handover
 
-For the team that continues this work and for the accountant who reviews it.
+Version 0.2.0, 16 November 2026. For the team that continues this work and for the accountant
+who reviews it.
 
-## 1. What this stage covers
+## 1. Read this first
 
-Against the Phase 1 proposal ("Step" numbers are the proposal's):
+- **This is a prototype.** It has never held real data and no accountant has reviewed it.
+- **It was built from public sources only**: SUNAT and MEF publications and ERPNext itself. No
+  client file, export, credential or portal was available. Everything that needs one of those
+  is not started (section 12).
+- **It decides where some money is posted**: the IGV account and three company defaults.
+  Those choices are in section 6 and must be confirmed before real use.
+- **Its screens are almost untested.** The logic is tested through code against a real ERPNext
+  site; forms were barely opened in a browser (section 9).
+- **Tested on ERPNext v15 only.**
+
+What it does, in one paragraph: it validates Peruvian identity documents on customers and
+suppliers; adds comprobante type, series and a gapless number to sales invoices and enforces
+the Factura / Boleta rules on submission; records the supplier's document on purchase invoices;
+loads the PCGE 2019 chart of accounts into a company; and sets up the IGV tax templates. The
+README describes each feature from the user's side.
+
+## 2. State against the Phase 1 proposal
+
+"Step" numbers are the proposal's.
 
 | Proposal item | State |
 |---|---|
-| Step 2 — custom app, licence, tests | Built. CI workflow written but **never run**. |
-| Step 3 — PCGE 2019 chart of accounts, apply / merge, defaults | **Built and tested (stage 2).** Account types and defaults need the accountant, see 3. |
-| Step 4 — identity documents with RUC/DNI validation and duplicate checks | Built and tested. |
-| Step 4 — comprobante type and series-number on invoices, note reason and reference | Built and tested. |
-| Step 4 — Ubigeo field and master | Field, master and CSV loader built. **District data not loaded.** |
+| Step 2 — custom app, GPL-3.0, tests | Built. CI workflow written, **never run**. |
+| Step 3 — PCGE 2019 chart, apply / merge, defaults | Built and tested. Account types and defaults await the accountant. |
+| Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
+| Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
+| Step 4 — comprobante type, series-number, note reason and reference | Built and tested. |
+| Step 4 — Ubigeo | Field, master and CSV loader built. **District data not loaded.** |
 | Step 4 — Boleta rule above S/ 700 | Built and tested. |
-| Step 4 — IGV 18% and tax categories (gravado, exonerado, inafecto, exportación) | **Built and tested (stage 2).** |
-| Step 4 — daily SUNAT exchange rate | **Not started.** |
-| Step 5 — e-invoicing | **Not started.** |
+| Step 4 — IGV 18% and the four tax categories | Built and tested. |
+| Step 4 — daily SUNAT exchange rate | Not started. |
+| Step 4 — destination entries (6 → 9 / 79) | Not started. |
+| Step 5 — e-invoicing (UBL, provider, CDR) | Not started. |
 | Step 6 — print format | Only the amount-in-words function. |
-| CONCAR toolkit, SIRE, destination entries | **Not started.** |
+| Step 7 — tests on v15 and v16, documentation | v15 only. README in English and Spanish. |
+| CONCAR toolkit, reconciliation, SIRE | Not started. |
+| Annexure A scenarios with an automated test | CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03, MD-CC-01..04, TX-UC-01..03, TX-CC-01..03 (20 of 81). Test names carry the ID. |
 
-Stage 1 only added identification data to documents. **Stage 2 decides where money is
-posted**: which account receives the IGV, which accounts are the company's receivable, payable
-and income defaults. Those choices are listed in section 3 and need an accountant before any
-real use.
+## 3. How it is built, and why
 
-## 2. How it was verified
+### Principles
 
-- **236 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11:
-  pure tests (validators, PCGE catalogue, number formatting, translations) and tests that run
-  against a real ERPNext site, including invoices posted to a company running on the PCGE.
-- **Mutation check:** 59 deliberate bugs were injected one at a time (wrong check-digit
-  weight, `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate changed to 16%,
-  the "company has ledger entries" guard removed...). Every one made at least one test fail.
+- **Nothing in ERPNext core is touched.** Behaviour is added with document hooks
+  (`hooks.py` → `overrides/`), custom fields (all prefixed `pe_`, created on install and
+  re-synchronized on every migrate) and the app's own DocTypes.
+- **Rules live in pure Python.** `utils/` has no Frappe import: RUC check digit, series and
+  number formats, amount in words, the PCGE catalogue. They are tested without a database and
+  can be reused by importers. `overrides/` and `accounts/` are thin layers that call them and
+  turn their error codes into translated messages (`overrides/common.py`).
+- **Only Peruvian companies are affected.** Every invoice hook returns at once unless the
+  company's country is Peru. Opening invoices (`is_opening = "Yes"`) are exempt as well. The
+  party hooks act only on parties that carry an identity document.
+- **Defaults on save, rules on submit.** `validate` fills defaults and rejects values that can
+  never be right. The rules that make a comprobante issuable run in `before_submit`, as the
+  proposal specifies.
+- **Regulatory data is data.** Catalogues and the chart are files under `data/`, each naming
+  its source. Catalogue masters are editable on the site; entries that exist are never
+  overwritten on upgrade.
+
+### Voucher numbering (the part to understand before changing anything)
+
+A comprobante number must be unique and consecutive per company, type and series, including
+under concurrent submissions and after failures.
+
+- ERPNext's own document name (`ACC-SINV-…`) is assigned when a draft is created, so deleted
+  drafts leave holes. It is **not** used as the comprobante number.
+- **SUNAT Voucher Series** holds one counter per company + type + series.
+- The number is allocated in `before_submit`, by locking that row (`SELECT … FOR UPDATE`),
+  incrementing it and writing it on the invoice. This happens inside the transaction that
+  submits the invoice: if anything fails afterwards the counter rolls back with it. No gaps.
+- The lock is held until the invoice has finished posting. Submissions in one series are
+  therefore serialized. That is deliberate.
+- `validate` always clears the number on a document that is not yet submitted in the
+  database. Reason: the browser's "Amend" copies read-only fields, so an amended invoice
+  arrives carrying the old number.
+- A cancelled voucher keeps its number; an amended one gets a new number; a document that has
+  a number cannot be deleted; the counter cannot be set below a number already issued.
+- Type and series are `no_copy`, so a credit note created from a Factura does not inherit
+  "01 / F001".
+
+### Identity documents
+
+Customer and Supplier carry `pe_identity_type` (SUNAT catalogue 06) and `pe_identity_number`.
+The number is normalized, validated, checked for duplicates within the same party type, and
+copied to ERPNext's Tax ID. The invoice stores its own copy of the customer's document
+(`pe_customer_identity_*`), refreshed until submission and frozen after it: the issued
+comprobante must not change if the master is corrected later.
+
+### PCGE
+
+- `utils/pcge.py` reads the catalogue and adds what ERPNext needs: element roots, group flags,
+  a root type per element, an account type by code prefix.
+- `accounts/pcge.py: apply_pcge` creates what is missing, in parent-first order, with the tree
+  index rebuilt once at the end. It never deletes, renames or re-types an existing account.
+  With `replace_existing` it first removes the current chart through ERPNext's own importer
+  code, which checks every link.
+- `import_client_accounts` places the company's sub-accounts under the account whose number is
+  the longest existing prefix of the code.
+- Both have a dry run that goes through the same code path and returns the same report, so
+  the preview cannot drift from the real run. There is a test for that.
+
+### IGV
+
+One 18% row on account 40111 for taxed operations; a 0% row on the same account for exonerado,
+inafecto and exportación, so every document states its treatment and nothing is posted. Each
+sales template carries the SUNAT catalogue 07 code (`pe_igv_affectation_type`). Tax rules link
+each tax category to its template.
+
+## 4. Data and where it comes from
+
+| Data | Source | In the repo |
+|---|---|---|
+| PCGE Modificado 2019, 1,764 accounts | MEF, Consejo Normativo de Contabilidad, Res. CNC 002-2019-EF/30, the MEF's PDF | `data/pcge_2019.csv`, generated from `tools/pcge/` |
+| Catalogue 01 comprobante types (17) | SUNAT Anexo 8, Anexo E of R.S. 245-2017 | `data/sunat_catalogues.json` |
+| Catalogue 06 identity documents (13) | Same annex for 0–D; codes E–H from the annexes of R.S. 000049-2026 | same |
+| Catalogue 07 IGV affectation (18) | Anexo E of R.S. 245-2017 | same |
+| Catalogue 09 credit note reasons (13) | Annex of R.S. 165-2021 | same |
+| Catalogue 10 debit note reasons (3) | Anexo E of R.S. 245-2017 | same |
+| IGV rate 18% | SUNAT guidance page; Ley 32387 for the IGV / IPM split | constant in `accounts/igv.py` |
+| S/ 700 Boleta rule | Reglamento de Comprobantes de Pago, art. 8; SUNAT FAQ | constant in `overrides/sales_invoice.py` |
+| RUC check digit | Modulus 11, weights 5 4 3 2 7 6 5 4 3 2 | `utils/identity.py` |
+
+**The PCGE file is generated, not hand-edited.** `tools/pcge/raw/` holds the catalogue exactly
+as the MEF printed it, misprints included. `tools/pcge/build_catalogue.py` applies 13 code
+corrections and 5 name corrections, each explicit, and writes the CSV. A test fails if the
+shipped CSV is not what the script produces. See `tools/pcge/README.md` for how the
+transcription was made and its limits.
+
+Not shipped, because no official source could be confirmed or reached:
+
+- **Ubigeo districts.** The loader is `setup/ubigeo.py`.
+- **Catalogue 10 codes 10 and 11** (export / IVAP adjustments): seen in third-party sources only.
+- **"Tabla 10" document types for purchases** (recibo por honorarios, DUA, non-domiciled…):
+  the purchase register needs them; only catalogue 01 is loaded.
+- **Elements 9 and 0 of the PCGE**: the MEF catalogue does not develop them. Only their roots
+  exist; the company's own accounts hang from them.
+
+## 5. How it was verified
+
+- **241 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+  on two sites, one of them a fresh install.
+- **Mutation check: 59 deliberate bugs**, injected one at a time: wrong check-digit weight,
+  `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
+  has ledger entries" guard removed, and so on. Every one made at least one test fail. The
+  list is `tools/mutation_check.py`. It was run as two batches (35 and 24). The combined script
+  was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
 - **Concurrency:** 8 database connections allocating 40 numbers in parallel produce exactly
   1..40; rolled-back allocations leave no gap; 4 invoices submitted in parallel get 4
   consecutive numbers.
-- **RUC algorithm** checked against four published RUCs and an independently written
-  reference over 20,000 random numbers.
-- **Amount in words** cross-checked against the `num2words` library for 0–99,999 and 50,000
-  random values up to 10^12 (after correcting that library's known error, see 4.3).
+- **RUC algorithm:** four published RUCs and an independently written reference over 20,000
+  random numbers.
+- **Amount in words:** cross-checked against the `num2words` library for 0–99,999 and 50,000
+  random values up to 10^12, after correcting that library's known error (section 7).
+- **PCGE:** the tree is consistent, and all 1,218 last-level codes match an independent copy
+  of the plan except the corrected misprints.
+- **Ledger:** tests assert the exact entries. S/ 1,000 taxed sale → 1212 debit 1,180, 70121
+  credit 1,000, 40111 credit 180. S/ 500 taxed purchase → 6011 debit 500, 40111 debit 90, 4212
+  credit 590. SUNAT's own example (sell 1,000, buy 600) leaves 72 payable on 40111.
 
 ### Not verified
 
-- **ERPNext's own test suite with this app installed.** It could not be started in the test
-  environment: it stops while creating its own fixtures, identically on a site without this
-  app. That standard ERPNext behaviour is unaffected rests on this app's own tests (companies
-  outside Peru are left untouched). Run ERPNext's suite in CI before a release.
-- **The user interface.** The test environment could not build ERPNext's front end, so no
-  form was opened in a browser there. The new "Peru" menu on the Company form (JavaScript)
-  was syntax-checked only and has never been clicked. Field placement, the `depends_on` visibility of the note
-  fields and the link filters are declarative and untested visually.
-- **ERPNext v16.** Only v15 was run.
-- **The CI workflow** (`.github/workflows/ci.yml`).
-- **Any real data.** All test data is synthetic.
+- **The screens** (section 9).
+- **ERPNext v16.** It needs Python 3.14 and Node 24, which the test machine did not have.
+- **The CI workflow.** `.github/workflows/ci.yml` has never run.
+- **ERPNext's own test suite with this app installed.** It could not be started on the test
+  machine: it stops while creating its own fixtures, identically on a site without this app.
+  That standard behaviour is unaffected rests on this app's tests that non-Peruvian companies
+  are left untouched. Run ERPNext's suite in CI before a release.
+- **PCGE account names**, line by line against the PDF, by a person.
+- **Anything with real data.** All test data is synthetic.
 
-## 3. Decisions the accountant must confirm
+## 6. Decisions awaiting the accountant
 
-Each of these is a judgement written into the code. They are easy to change.
+Each is a judgement written into the code and easy to change. The file is given.
 
-1. **Factura to a non-domiciled customer.** A Factura is accepted for identity type `6` (RUC)
-   and also `0` (non-domiciled without RUC), intended for exports. Any other document type is
-   blocked. *File: `overrides/sales_invoice.py`, `_validate_customer_identity`.*
-2. **Boleta threshold.** Identity is required when the total in soles is *strictly greater*
-   than 700.00 (700.00 itself passes). The total used is the grand total converted to soles.
-   The exemption for non-domiciled buyers who cannot have a document is **not** implemented.
-3. **Default comprobante type.** Empty type becomes Factura when the customer has a RUC and
-   Boleta otherwise. A Boleta to a customer with RUC is allowed, with a warning.
-4. **RUC prefixes.** 10, 15, 16, 17 and 20 are accepted.
-5. **Purchase side is optional.** Type, series and number of the supplier's document are
-   validated when entered but not required. The purchase register (SIRE RCE) will need them.
-6. **Supplier credit notes** must be entered as ERPNext returns (type 07 ⇔ "Is Return").
-7. **Identity number is copied to Tax ID** for every document type, not only RUC.
-8. **Credit note reasons 02 and 03** are not restricted by modified document type.
+### Comprobantes — `overrides/sales_invoice.py`, `overrides/purchase_invoice.py`
 
-### Stage 2 decisions (these affect postings)
+1. **Factura to a non-domiciled customer.** Accepted for identity type `6` (RUC) and `0`
+   (non-domiciled without RUC), intended for exports. Any other type is blocked.
+2. **Boleta threshold.** Identity is required when the total in soles, IGV included, is
+   *strictly greater* than 700.00. The exemption for non-domiciled buyers who cannot have a
+   document is not implemented.
+3. **Default type.** Empty type becomes Factura when the customer has a RUC, Boleta otherwise.
+   A Boleta to a customer with RUC is allowed, with a warning.
+4. **Purchase side is optional.** Type, series and number of the supplier's document are
+   validated when entered but not required.
+5. **Supplier credit notes** must be entered as ERPNext returns (type 07 ⇔ "Is Return").
+6. **Credit note reasons 02 and 03** are not restricted by the type of the modified document.
+7. **Series of received vouchers** must have exactly four characters for types 01/03/07/08.
 
-9. **Root types.** Elements 1–3 are Asset, 4 Liability, 5 Equity, 6 Expense, 7 Income. The
-   PCGE has no equivalent for ERPNext's five types in three cases, where a choice was made:
-   element 8 → Expense, element 9 → Expense, element 0 → Asset. With 9 as Expense and 79 under
-   Income, analytic entries (9x against 79) inflate both sides of the profit and loss report by
-   the same amount. *File: `utils/pcge.py`, `ELEMENTS`.*
-10. **Account types** are set on as few accounts as possible: Cash (101, 102), Bank (104,
+### Identity — `utils/identity.py`, `overrides/party.py`
+
+8. **RUC prefixes** 10, 15, 16, 17 and 20 are accepted.
+9. **The identity number is copied to Tax ID** for every document type, not only RUC.
+
+### Chart of accounts — `utils/pcge.py`, `accounts/pcge.py`
+
+10. **Root types.** Elements 1–3 Asset, 4 Liability, 5 Equity, 6 Expense, 7 Income. Where
+    ERPNext has no equivalent a choice was made: element 8 → Expense, 9 → Expense, 0 → Asset.
+    With 9 as Expense and 79 under Income, analytic entries (9x against 79) inflate both sides
+    of the profit and loss report by the same amount.
+11. **Account types** are set on as few accounts as possible: Cash (101, 102), Bank (104,
     106), Receivable (121, 123, 131, 133), Payable (421, 423, 424, 431, 433, 434), Tax (4011),
     Cost of Goods Sold (69), Income Account (70). Receivable and Payable accounts require a
-    customer or supplier on every entry. Inventory (20–28) and fixed assets (33, 39) have no
-    type on purpose.
-11. **Company defaults set:** receivable 1212, payable 4212, income 70121.
-12. **Round-off account 7599 is provisional.** ERPNext will not submit any invoice without
-    one. It only receives céntimos, but the account is the accountant's choice.
-13. **Not set:** cash and bank defaults, default expense / cost of sales, exchange difference
+    customer or supplier on every entry, which matters for the CONCAR journal import.
+    Inventory (20–28) and fixed assets (33, 39) have no type on purpose.
+12. **Company defaults set:** receivable 1212, payable 4212, income 70121.
+13. **Round-off account 7599 is provisional.** ERPNext will not submit any invoice without
+    one. It only ever receives céntimos.
+14. **Defaults left empty:** cash, bank, default expense / cost of sales, exchange difference
     (ERPNext takes one account; the PCGE has 676 for losses and 776 for gains), all stock
     accounts.
-14. **IGV on purchases is debited to 40111**, the same account credited on sales, so its
-    balance is the IGV payable. Whether to use 1673 or the 40116/40117 split is open.
-15. **Exempt, unaffected and export sales** use a template with a 0% line on 40111, so the
-    document states its treatment and nothing is posted.
-16. **Mixed invoices** (taxed and exempt items together) are not handled: one template applies
-    to the whole document.
 
-## 4. Findings about ERPNext that affect Peru
+### IGV — `accounts/igv.py`
 
-1. **Totals are rounded by default.** ERPNext posts the *rounded* total to the customer and
-   books the difference to a round-off account. On a company created by the setup wizard, an
-   invoice of S/ 1,250.50 produced a receivable of S/ 1,250.00 and S/ 0.50 in "Round Off"
-   until "Disable Rounded Total" was set. Peruvian comprobantes are issued to the céntimo, so
-   this setting (Global Defaults) must be on. The app does **not** enforce it.
-2. **Foreign-currency invoices need a party account in that currency.** A USD invoice against
-   the PEN receivable account is rejected by ERPNext v15 unless Accounts Settings allows
-   multi-currency invoices against a single party account. Relevant to the chart of accounts
-   design (12 / 42 in USD).
-3. **`num2words` is wrong for Spanish thousands.** It writes "veintiuno mil" instead of
-   "veintiún mil". Frappe's built-in money-in-words uses that library, so the print format
-   must use `erpnext_peru.utils.amount_in_words` instead.
-4. **"Amend" copies read-only fields in the browser.** An amended invoice arrives carrying the
-   old voucher number. The server discards it on every save; there is a test for this.
-5. **"Create → Credit Note" copies fields from the original.** Type and series are marked
-   `no_copy` so a credit note does not inherit "01 / F001".
+15. **Purchase IGV is debited to 40111**, the account credited on sales, so its balance is
+    the IGV payable. Whether to use 1673, or the 40116 / 40117 split by destination, is open.
+16. **Zero-rate templates** post nothing and exist to state the treatment.
+17. **One template per document.** Invoices mixing taxed and exempt items are not handled.
+18. **The reduced rate** for small restaurants, hotels and lodging is not set up.
 
-6. **ERPNext's built-in tax for Peru is 16%.** Every company created with country Peru gets
-   a "Peru Tax" template at 16% on an account called VAT. The IGV setup disables it.
-7. **The default tax template is only applied in the browser.** A Sales Invoice created by
-   the API, an import or another app arrives with no tax lines and would be issued without
-   IGV. Once a company has the IGV templates, this app blocks submitting a Sales Invoice
-   with no tax line at all.
-8. **Half-céntimo rounding.** New ERPNext sites use banker's rounding: the IGV of S/ 0.25
-   (0.045) becomes 0.04, not 0.05; of S/ 1.25, 0.22, not 0.23. The setting is site-wide
-   (System Settings → Rounding Method). The IGV setup warns about it but does not change it.
-9. **Purchase invoices need a decision on inventory.** With "perpetual inventory" on (the
-   default for a new company), ERPNext demands a "Stock Received But Not Billed" account on
-   every purchase invoice. The tests run with it off, which matches booking purchases through
-   60/61, but this is the accountant's design choice.
-10. **An account that is a company default cannot become a group.** If the company wants
-    sub-accounts under 1212 or 4212, the default has to point elsewhere first. The import
-    reports this as a conflict and continues.
-11. **ERPNext's chart importer leaves an item tax template behind**, which then blocks
-    deleting the old tax account. Replacing the chart removes it first.
-12. **Applying the PCGE takes about 25 seconds** on the test machine (1,774 accounts) and runs
-    inside one web request. A slow server could time out; it would then need a background job.
+## 7. ERPNext behaviours that matter for Peru
 
-## 5. Known gaps and risks
+Found while building. Some are settings to change, some are traps.
+
+1. **Totals are rounded by default.** An invoice of S/ 1,250.50 posted S/ 1,250.00 to the
+   customer and S/ 0.50 to "Round Off" until Global Defaults → "Disable Rounded Total" was
+   set. The app does not enforce the setting.
+2. **Half-céntimo rounding.** New sites use banker's rounding: the IGV of S/ 0.25 (0.045)
+   becomes 0.04, of S/ 1.25, 0.22. System Settings → Rounding Method is site-wide. The IGV
+   setup warns and changes nothing.
+3. **ERPNext's built-in tax for Peru is 16%**, a "Peru Tax" template created with every
+   Peruvian company. The IGV setup disables it.
+4. **The default tax template is applied only in the browser.** A Sales Invoice created by
+   the API, an import or another app has no tax lines. Once a company has the IGV templates,
+   this app blocks submitting a Sales Invoice with no tax line.
+5. **No invoice can be submitted without a round-off account**, even when nothing is rounded.
+6. **Foreign-currency invoices need a party account in that currency**, or the Accounts
+   Settings option for multi-currency invoices against one party account.
+7. **Purchase invoices and perpetual inventory.** With it on (the default for a new company)
+   every purchase invoice demands a "Stock Received But Not Billed" account. The tests run
+   with it off, which matches booking purchases through 60 / 61. This is a design decision.
+8. **An account that is a company default cannot become a group.** Sub-accounts under 1212 or
+   4212 need the default moved first. The import reports this as a conflict and continues.
+9. **A typed ledger can become a group** only with ERPNext's `exclude_account_type_check`
+   flag, which the app sets (bank account 1041 keeps its type when 104101 is added).
+10. **ERPNext's chart importer leaves an item tax template behind**, which blocks deleting
+    the old tax account. Replacing the chart removes it first.
+11. **`num2words` is wrong for Spanish thousands** ("veintiuno mil"). Frappe's money-in-words
+    uses it, so the print format must use `utils/amount_in_words.py`.
+12. **"Amend" copies read-only fields in the browser** (see numbering, section 3).
+13. **List filters prefill new records.** Filtering the Customer list by identity type and
+    then pressing "Add" creates a customer with that type already set.
+14. **`frappe.copy_doc` keeps the docstatus when tests are running.** Only relevant to tests.
+
+## 8. Known gaps and risks
 
 - **Cancellation is not restricted.** A submitted Factura can be cancelled in ERPNext. Under
-  SUNAT rules that needs a comunicación de baja or a credit note. This belongs to the
-  e-invoicing step; until then, cancelling is a procedural matter.
-- **Catalogue 10 (debit note reasons)** ships codes 01–03, the ones found in an official
-  SUNAT annex. Codes 10 and 11 (export / IVAP adjustments) appear in third-party sources only
-  and were left out. Add them in the master if confirmed.
-- **Comprobante types for purchases.** Catalogue 01 is loaded. The purchase register uses the
-  wider "Tabla 10" (recibo por honorarios, DUA, non-domiciled documents...). Not loaded.
-- **Ubigeo data** must come from the official INEI/SUNAT list.
-- **Identity duplicates** are checked by the application, not by a database constraint. Two
+  SUNAT rules that takes a comunicación de baja or a credit note. It belongs with e-invoicing.
+- **Identity duplicates are checked by the application, not by a database constraint.** Two
   users saving the same new RUC in the same instant could both succeed.
-- **Submissions in one series are serialized.** The row lock is held until the invoice
-  finishes posting. Correct, but high-volume series queue behind each other.
-- **Uninstalling** leaves the custom fields and their data in place.
-- **Series of received vouchers** must have exactly four characters for types 01/03/07/08;
-  three-digit series of old paper documents have to be entered with a leading zero.
+- **Applying the PCGE runs inside one web request** and took about 25 seconds for 1,774
+  accounts on the test machine. A slow server could time out; it would then need a
+  background job.
+- **Replacing a chart deletes accounts.** It is refused when the company has ledger entries,
+  and every deletion passes ERPNext's link checks, but it is the one destructive action here.
+- **Uninstalling** leaves the custom fields and their data.
+- **No roles or permissions of its own.** The form actions require System Manager or Accounts
+  Manager; the catalogue masters are readable by everyone. The proposal's Migration User /
+  Migration Approver roles do not exist yet.
+- **No workspace or menu entry.** Everything is reached through existing forms and search.
+- **The repository is marked "do not use"** in its README, at the owner's request.
 
-## 2b. Stage 2: PCGE and IGV
+## 9. State of the screens
 
-### Sources
+Seen on a Frappe Cloud site (ERPNext v15, Spanish interface):
 
-- **PCGE Modificado 2019**, Consejo Normativo de Contabilidad / MEF, approved by Resolución CNC
-  N.° 002-2019-EF/30, mandatory since 1 January 2020. Taken from the MEF's own PDF. No later
-  version was found on the MEF site.
-- **IGV rate:** SUNAT's guidance page states 18% on taxed operations. Ley N.° 32387 changes how
-  that 18% is split between IGV and IPM (2026: 15.5% + 2.5%; the proposal's "16% + 2%" is the
-  split of earlier years). The total is unchanged, and both are booked together on 40111.
-- **IGV affectation codes:** SUNAT catalogue 07 (Anexo E, R.S. 245-2017/SUNAT).
+- The app installs and migrates; the catalogue masters list correctly; Spanish labels load.
+- The catalogue lists show the code twice and "enabled" twice (ERPNext's own columns plus
+  ours). Cosmetic.
+- The new-customer pop-up did not show the identity fields. Fixed (they are now flagged for
+  quick entry) but **not re-checked on a site**.
 
-### The chart
+Never seen in a browser:
 
-- 1,764 catalogue accounts (elements 1 to 8) plus 10 element roots. Elements 9 (analytic
-  costs) and 0 (memorandum accounts) have a root only: the MEF catalogue does not develop them.
-- The MEF document contains misprints (repeated or misplaced codes). 13 codes and 5 names were
-  corrected; each one is listed in `data/pcge_2019_notes.json` with the reason.
-- Checked two ways: the tree is consistent (no repeated code, every account has its parent),
-  and all 1,218 last-level codes match an independent copy of the plan except the corrected
-  misprints. Account *names* were compared too; no transcription error was found, but names
-  were not proof-read line by line against the PDF by a person.
+- The SUNAT section on Sales Invoice and Purchase Invoice: placement, the read-only number,
+  the note fields that should appear only on credit and debit notes.
+- **The "Perú" menu on the Company form** ("Aplicar PCGE 2019", "Configurar IGV"). It is
+  JavaScript, syntax-checked only. Try this first.
+- Every error message as a user sees it.
 
-### What the two actions do (Company form → "Peru" menu)
+## 10. Working on it
 
-- **Apply PCGE 2019.** Adds the catalogue accounts the company lacks. Never deletes, renames
-  or re-types an existing account; running it again creates nothing. With "delete the current
-  chart first" it replaces ERPNext's standard chart, which is only allowed while the company
-  has no ledger entries. A preview is shown before anything is written.
-- **Set Up IGV.** Creates four tax categories, four sales templates (18%, and 0% for
-  exonerado / inafecto / exportación), three purchase templates and the tax rules that link
-  them. Disables the "Peru Tax" template ERPNext creates on its own.
-- **`import_client_accounts`** (function only, no screen yet) places the company's own
-  sub-accounts under the PCGE, with a dry run and a report of rejected rows and conflicts.
+### Set up
 
-## 6. Where things are
+```bash
+bench get-app <repository-url>              # ERPNext v15 bench
+bench new-site test.localhost               # a site used ONLY for tests
+bench --site test.localhost install-app erpnext erpnext_peru
+bench --site test.localhost set-config allow_tests true
+```
+
+### Run the tests
+
+```bash
+bench --site test.localhost run-tests --app erpnext_peru                                   # all (about 2 minutes)
+bench --site test.localhost run-tests --app erpnext_peru --module erpnext_peru.tests.test_igv
+```
+
+The pure tests need no site:
+
+```bash
+python -m unittest erpnext_peru.tests.test_identity erpnext_peru.tests.test_voucher \
+    erpnext_peru.tests.test_amount_in_words erpnext_peru.tests.test_pcge_data \
+    erpnext_peru.tests.test_pcge_provenance erpnext_peru.tests.test_translations
+```
+
+Things to know:
+
+- **The first run is slower.** It runs ERPNext's setup wizard (the `before_tests` hook
+  delegates to ERPNext's) and creates three companies that stay on the site: `_Test Peru SAC`
+  (standard chart), `_Test Foreign Inc` (not Peru) and `_Test PCGE SAC` (PCGE and IGV applied).
+- **Tests roll back; fixtures and the concurrency tests commit.** The concurrency tests open
+  several database connections, use their own series (`FZ9…`) and clean up after themselves.
+- **Never run the tests on a site with real data.**
+- **Mutation check:** `python tools/mutation_check.py --bench <bench> --site <test site>`.
+  It edits source files while it runs and restores them. When a test is added for a new
+  rule, add a mutant for it.
+- **Lint:** `ruff check .` and `ruff format .` (settings in `pyproject.toml`, tabs).
+- **Translations:** every message and label must have a row in `translations/es.csv`;
+  `test_translations.py` fails otherwise, and also on stale rows.
+- **Regenerating the PCGE:** `python tools/pcge/build_catalogue.py --write`.
+
+### Conventions
+
+- Custom fields are declared in `setup/custom_fields.py` and nowhere else; `pe_` prefix.
+- A new rule goes in `utils/` if it can be stated without the database, with its own error
+  code; the hook translates the code into a message.
+- Messages are written in English in the code and translated in `es.csv`.
+- A rule that can block a user needs a test for the allowed side and the blocked side.
+
+## 11. Where the remaining work plugs in
+
+**E-invoicing.**
+- Start from `Sales Invoice.pe_voucher_number`, `pe_comprobante_type`, `pe_series`,
+  `pe_number`, `pe_customer_identity_type / _number`, `pe_credit_note_reason`,
+  `pe_debit_note_reason`, `pe_original_type`, `pe_original_voucher_number`.
+- The IGV treatment is on the tax template (`pe_igv_affectation_type`). UBL needs it per
+  line; a line-level field or item tax templates will be needed for mixed invoices.
+- Send after submission (an `on_submit` hook or a queue), never inside `before_submit`: the
+  series row is locked there.
+- Add status fields and block cancellation of accepted vouchers (section 8).
+- `Address.pe_ubigeo` exists for the issuer and customer address.
+
+**Print format.** `utils/amount_in_words.amount_in_words(total, currency)`. The QR needs the
+hash from the signed XML.
+
+**SIRE.**
+- Sales register: the sales fields above plus the tax rows.
+- Purchase register: `Purchase Invoice.pe_comprobante_type`, `pe_series`, `pe_number`,
+  `pe_voucher_number`, `pe_original_*`. They must become mandatory, and "Tabla 10" loaded.
+
+**CONCAR import.**
+- Parties: reuse `utils/identity.py` and the duplicate rule in `overrides/party.py`. Creating
+  the documents through `frappe.get_doc(...).insert()` runs the same validation.
+- Chart: `accounts/pcge.import_client_accounts(company, rows, dry_run=True)` already returns
+  the per-row report the proposal describes (created, rejected with reason, conflicts).
+- Journals: lines on Receivable / Payable accounts need a party (decision 11).
+- The proposal's import batch, mapping profile, error log, reversal and duplicate-file block
+  do not exist yet.
+
+**Destination entries.** Element 9 exists as a root only; the company's 9x accounts arrive
+through `import_client_accounts`. See decision 10 for the effect on the profit and loss report.
+
+**Exchange rate.** A scheduled job writing ERPNext's Currency Exchange; nothing exists.
+
+## 12. Suggested order
+
+1. **Click through the screens** on a v15 site, starting with the "Perú" menu. Half a day,
+   and it removes the largest unknown.
+2. **Run the CI workflow** and fix what the first run shows.
+3. **Accountant session on section 6.** Decisions 10–15 shape everything that posts.
+4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
+5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
+   show how well the PCGE mapping fits before anything is committed.
+6. **Load Ubigeo and "Tabla 10"** from official files.
+7. **CONCAR import engine**, parties first. Needs real export files.
+8. **E-invoicing.** Needs the OSE / PSE provider chosen and sandbox credentials.
+9. **SIRE.** Needs a real proposal from the client's SUNAT portal to compare against.
+10. **Destination entries**, after the accountant's mapping.
+11. **v16**, once the above is stable on v15.
+
+Blocked on the client: 5, 7, 8, 9, 10. Blocked on the accountant: 3, 4, 10.
+
+## 13. File map
 
 ```
+README.md                       what the app does, for users (English and Spanish)
+docs/HANDOVER.md                this document
+tools/
+  pcge/raw/                     the MEF catalogue as printed
+  pcge/build_catalogue.py       raw transcription -> data/pcge_2019.csv
+  mutation_check.py             the 59 deliberate bugs
 erpnext_peru/
-  utils/          pure Python, no Frappe: identity.py, voucher.py, amount_in_words.py, pcge.py
-  accounts/       pcge.py (apply / merge), igv.py (templates), api.py (form actions)
-  public/js/      company.js (the "Peru" menu on the Company form)
-  overrides/      document hooks: party, company, address, sales_invoice, purchase_invoice
-  setup/          custom_fields.py (all pe_* fields), install.py, ubigeo.py (CSV loader)
-  data/           sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json (with sources)
-  erpnext_peru/doctype/   catalogue masters, Ubigeo, SUNAT Voucher Series
+  hooks.py                      document hooks, form script, install / migrate / test hooks
+  utils/                        pure Python, no Frappe
+    identity.py                 RUC, DNI and other identity documents
+    voucher.py                  series and numbers, issued and received
+    amount_in_words.py          "SON: ... CON 00/100 SOLES"
+    pcge.py                     the catalogue, element roots, root and account types
+  overrides/                    document hooks
+    common.py                   error classes, message translation, is_peru_company
+    party.py                    Customer and Supplier identity
+    company.py                  RUC of a Peruvian company
+    address.py                  Ubigeo
+    sales_invoice.py            comprobante rules and numbering on submit
+    purchase_invoice.py         supplier document, duplicates
+  accounts/
+    pcge.py                     apply_pcge, import_client_accounts
+    igv.py                      setup_igv
+    api.py                      methods the Company form calls
+  public/js/company.js          the "Perú" menu on the Company form
+  setup/
+    custom_fields.py            every pe_* field
+    install.py                  creates fields, loads catalogues (install and migrate)
+    ubigeo.py                   CSV loader
+  data/                         sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json
+  erpnext_peru/doctype/         SUNAT Comprobante Type, Identity Document Type, Credit Note
+                                Reason, Debit Note Reason, IGV Affectation Type, Voucher
+                                Series; Ubigeo
   translations/es.csv
-  tests/
+  tests/                        utils.py holds the fixtures
 ```
 
-Annexure A scenarios covered by a test: CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03,
-MD-CC-01..04, TX-UC-01..03, TX-CC-01..03. Test names carry the scenario ID.
+## 14. History
+
+| Version | Commit subject | Content |
+|---|---|---|
+| 0.1.0 | `erpnext_peru v0.1.0: prototype, first stage` | Identity documents, comprobante fields and numbering, catalogues 01 / 06 / 09 / 10, Ubigeo, amount in words. |
+| — | `Show identity document fields in the … quick entry dialog` | Fix found on the first site test. |
+| — | `README: mark the repository as a local experiment…` | Warning banner. |
+| 0.2.0 | `Add PCGE 2019 chart of accounts and IGV tax templates` | PCGE, IGV, catalogue 07, the "Perú" menu, the tax-line rule on sales invoices. |
+| 0.2.0 | this commit | Handover rewritten; PCGE transcription, build script and mutation list added to the repository. |

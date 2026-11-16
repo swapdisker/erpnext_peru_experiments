@@ -1,0 +1,238 @@
+20|MERCADERÍAS
+201|Mercaderías
+2011|Mercaderías
+20111|Costo
+20114|Valor razonable
+21|PRODUCTOS TERMINADOS
+211|Productos terminados
+2111|Productos terminados
+21111|Costo
+21113|Costo de financiación
+21114|Valor razonable
+215|Inventario de servicios terminados
+2151|Servicios terminados
+21511|Costo
+22|SUBPRODUCTOS, DESECHOS Y DESPERDICIOS
+221|Subproductos
+222|Desechos y desperdicios
+23|PRODUCTOS EN PROCESO
+231|Productos en proceso
+2311|Productos en proceso
+23111|Costo
+23113|Costo de financiación
+235|Inventario de servicios en proceso
+2351|Servicios en proceso
+23511|Costo
+24|MATERIAS PRIMAS
+241|Materias primas
+2411|Materias primas
+24111|Costo
+24114|Valor razonable
+25|MATERIALES AUXILIARES, SUMINISTROS Y REPUESTOS
+251|Materiales auxiliares
+252|Suministros
+2521|Combustibles
+2522|Lubricantes
+2523|Energía
+2524|Otros suministros
+253|Repuestos
+26|ENVASES Y EMBALAJES
+261|Envases
+262|Embalajes
+27|ACTIVOS NO CORRIENTES MANTENIDOS PARA LA VENTA
+271|Propiedades de inversión
+2711|Terrenos
+27111|Costo
+27112|Revaluación
+27114|Valor razonable
+2712|Edificaciones
+27121|Costo
+27122|Revaluación
+27123|Costos de financiación
+27124|Valor razonable
+272|Propiedad, planta y equipo
+2720|Planta productora en producción
+27201|Costo
+27202|Revaluación
+27203|Costo de financiación
+27204|Valor razonable
+2721|Planta productora en desarrollo
+27211|Costo
+27212|Revaluación
+27213|Costo de financiación
+27214|Valor razonable
+2722|Terrenos
+27221|Costo
+27222|Revaluación
+2723|Edificaciones
+27231|Costo
+27232|Revaluación
+27233|Costo de financiación
+2724|Maquinarias y equipos de explotación
+27241|Costo
+27242|Revaluación
+27233|Costo de financiación
+2725|Unidades de transporte
+27251|Costo
+27252|Revaluación
+2726|Muebles y enseres
+27261|Costo
+27262|Revaluación
+2727|Equipos diversos
+27271|Costo
+27272|Revaluación
+2728|Herramientas y unidades de reemplazo
+27281|Costo
+27282|Revaluación
+2729|Obras en curso
+27291|Costo
+27292|Revaluación
+273|Intangibles
+2731|Concesiones, licencias y derechos
+27311|Costo
+27312|Revaluación
+2732|Patentes y propiedad industrial
+27321|Costo
+27322|Revaluación
+2733|Programas de computadora (software)
+27331|Costo
+27332|Revaluación
+2734|Costos de exploración y desarrollo
+27341|Costo
+27342|Revaluación
+2735|Fórmulas, diseños y prototipos
+27351|Costo
+27352|Revaluación
+2739|Otros activos intangibles
+27391|Costo
+27392|Revaluación
+274|Activos biológicos
+2741|Activos biológicos en producción
+27411|Costo
+27413|Costos de financiación
+27414|Valor razonable
+2742|Activos biológicos en desarrollo
+27421|Costo
+27423|Costos de financiación
+27424|Valor razonable
+275|Depreciación acumulada – Propiedades de inversión
+2752|Edificaciones
+27521|Costo
+27522|Revaluación
+27523|Costo de financiación
+276|Depreciación acumulada – Propiedad, planta y equipo
+2760|Planta productora en producción
+27601|Costo
+27602|Revaluación
+27603|Costo de financiación
+27604|Valor razonable
+2762|Edificaciones
+27621|Costo
+27622|Revaluación
+27623|Costo de financiación
+2763|Maquinarias y equipo de explotación
+27631|Costo
+27632|Revaluación
+27633|Costo de financiación
+2764|Unidades de transporte
+27641|Costo
+27642|Revaluación
+2765|Muebles y enseres
+27651|Costo
+27652|Revaluación
+2766|Equipos diversos
+27661|Costo
+27662|Revaluación
+2767|Herramientas y unidades de reemplazo
+27671|Costo
+27672|Revaluación
+277|Amortización acumulada – Intangibles
+2771|Concesiones, licencias y derechos
+27711|Costo
+27712|Revaluación
+2772|Patentes y propiedad industrial
+27721|Costo
+27722|Revaluación
+2773|Programas de computadora (software)
+27731|Costo
+27732|Revaluación
+2774|Costos de exploración y desarrollo
+27741|Costo
+27742|Revaluación
+2775|Fórmulas, diseños y prototipos
+27751|Costo
+27752|Revaluación
+2779|Otros activos intangibles
+27791|Costo
+27792|Revaluación
+278|Depreciación acumulada – Activos biológicos
+2781|Activos biológicos en producción
+27811|Costo
+27813|Costo de financiación
+2782|Activos biológicos en desarrollo
+27821|Costo
+27823|Costo de financiación
+279|Desvalorización acumulada
+2791|Propiedad de inversión
+27910|Planta productora en producción
+27911|Planta productora en desarrollo
+27912|Terrenos
+27913|Edificaciones
+2793|Propiedad, planta y equipo
+27930|Plantas productoras en producción
+27931|Planta productora en desarrollo
+27932|Terrenos
+27933|Edificaciones
+27934|Maquinarias y equipos de explotación
+27935|Unidades de transporte
+27936|Muebles y enseres
+27937|Equipos diversos
+27938|Herramientas y unidades de reemplazo
+2794|Intangibles
+27941|Concesiones, licencias y otros derechos
+27942|Patentes y propiedad industrial
+27943|Programas de computadora (software)
+27944|Costos de exploración y desarrollo
+27945|Fórmulas, diseños y prototipos
+27949|Otros activos intangibles
+2795|Activos biológicos
+27951|Activos biológicos en producción
+27952|Activos biológicos en desarrollo
+28|INVENTARIOS POR RECIBIR
+281|Mercaderías
+284|Materias primas
+285|Materiales auxiliares, suministros y repuestos
+286|Envases y embalajes
+29|DESVALORIZACIÓN DE INVENTARIOS
+291|Mercaderías
+2911|Mercaderías
+29111|Costo
+292|Productos terminados
+2921|Productos terminados
+29211|Costo
+29213|Costo de financiación
+2925|Inventario de servicios terminados
+29251|Costo
+293|Subproductos, desechos y desperdicios
+2931|Subproductos
+2932|Desechos y desperdicios
+294|Productos en proceso
+2941|Productos en proceso
+29411|Costo
+29413|Costo de financiación
+2945|Inventario de servicios en proceso
+295|Materias primas
+2951|Materias primas
+29511|Costo
+296|Materiales auxiliares, suministros y repuestos
+2961|Materiales auxiliares
+2962|Suministros
+2963|Repuestos
+297|Envases y embalajes
+2971|Envases
+2972|Embalajes
+298|Existencias por recibir
+2981|Mercaderías
+2982|Materias primas
+2983|Materiales auxiliares, suministros y repuestos
+2984|Envases y embalajes

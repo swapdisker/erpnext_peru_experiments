@@ -1,0 +1,247 @@
+35|ACTIVOS BIOLÓGICOS
+351|Activos biológicos en producción
+3511|De origen animal
+35111|Costo
+35113|Costo de financiación
+35114|Valor razonable
+3512|De origen vegetal
+35121|Costo
+35123|Costo de financiación
+35124|Valor razonable
+352|Activos biológicos en desarrollo
+3521|De origen animal
+35211|Costo
+35213|Costo de financiación
+35214|Valor razonable
+3522|De origen vegetal
+35221|Costo
+35223|Costo de financiación
+35224|Valor razonable
+36|DESVALORIZACIÓN DE ACTIVO INMOVILIZADO
+361|Desvalorización de propiedades de inversión
+3611|Terrenos
+36111|Costo
+36112|Revaluación
+3612|Edificaciones
+36121|Costo
+36122|Revaluación
+36123|Costo de financiación
+3613|Construcciones en curso - edificaciones
+36131|Costo
+36132|Revaluación
+36133|Costo de financiación
+362|Desvalorización de propiedades de inversión - Arrendamiento financiero
+3621|Terrenos
+36211|Costo
+36212|Revaluación
+3622|Edificaciones
+36221|Costo
+36222|Revaluación
+36223|Costo de financiación
+363|Desvalorización de propiedad, planta y equipo - Arrendamiento financiero
+3631|Terrenos
+36311|Costo
+36312|Revaluación
+3632|Edificaciones
+36321|Costo
+36322|Revaluación
+36323|Costo de financiación
+3633|Maquinaria y equipo de explotación
+36331|Costo
+36332|Revaluación
+36333|Costo de financiación
+3634|Unidades de transporte
+36341|Costo
+36342|Revaluación
+3635|Muebles y enseres
+36351|Costo
+36352|Revaluación
+3636|Equipos diversos
+36361|Costo
+36362|Revaluación
+364|Desvalorización de propiedad, planta y equipo
+3640|Planta productora en producción
+36401|Costo
+36402|Planta productora en producción - Revaluación
+36403|Planta productora en producción - Costo de financiación
+33404|Planta productora en producción - Valor razonable
+36405|Planta productora en desarrollo - Costo
+36406|Planta productora en desarrollo - Revaluación
+36407|Planta productora en desarrollo - Costo de financiación
+36408|Planta productora en desarrollo - Valor razonable
+3641|Terrenos
+36411|Costo
+36412|Revaluación
+3642|Edificaciones
+36421|Edificaciones - Costo
+36422|Edificaciones - Revaluación
+36423|Edificaciones - Costo de financiación
+36424|Instalaciones - Costo
+36425|Instalaciones - Revaluación
+36426|Instalaciones - Costo de financiación
+36427|Mejoras en locales arrendados - Costo
+36428|Mejoras en locales arrendados - Revaluación
+36429|Mejoras en locales arrendados - Costo de financiación
+3643|Maquinaria y equipo de explotación
+36431|Costo
+36432|Revaluación
+36433|Costo de financiación
+3644|Unidades de transporte
+36441|Costo
+36442|Revaluación
+3645|Muebles y enseres
+36451|Costo
+36452|Revaluación
+3646|Equipos diversos
+36461|Costo
+36462|Revaluación
+3647|Herramientas y unidades de reemplazo
+36471|Herramientas - Costo
+38472|Herramientas - Revaluación
+38473|Unidades de reemplazo - costo
+38474|Unidades de reemplazo - Revaluación
+3649|Obras en curso
+36491|Costo
+36492|Revaluación
+365|Desvalorización de intangibles
+3651|Concesiones, licencias y otros derechos
+36511|Costo
+36512|Revaluación
+3652|Patentes y propiedad industrial
+36521|Costo
+36522|Revaluación
+3653|Programas de computadora (software)
+36531|Costo
+36532|Revaluación
+3654|Costos de exploración y desarrollo
+36541|Costo
+36542|Revaluación
+36543|Costo de financiación
+3655|Fórmulas, diseños y prototipos
+36551|Costo
+36552|Revaluación
+3657|Plusvalía mercantil
+3659|Otros activos intangibles
+36591|Costo
+36592|Revaluación
+366|Desvalorización de activos biológicos
+3661|Activos biológicos en producción
+36611|Costo
+36613|Costo de financiación
+3662|Activos biológicos en desarrollo
+36621|Costo
+36622|Costo de financiación
+367|Desvalorización de inversiones mobiliarias
+3671|Inversiones a ser mantenidas hasta el vencimiento
+36711|Costo
+3672|Inversiones financieras representativas de derecho patrimonial
+36721|Costo
+3673|Otras inversiones financieras
+36731|Costo
+37|ACTIVO DIFERIDO
+371|Impuesto a la renta diferido
+3711|Impuesto a la renta diferido – Patrimonio
+3712|Impuesto a la renta diferido – Resultados
+372|Participaciones de los trabajadores diferidas
+3721|Participaciones de los trabajadores diferidas – Patrimonio
+3722|Participaciones de los trabajadores diferidas – Resultados
+373|Intereses diferidos
+3731|Intereses no devengados en transacciones con terceros
+3732|Intereses no devengados en medición a valor descontado
+38|OTROS ACTIVOS
+381|Bienes de arte y cultura
+3811|Obras de arte
+3812|Biblioteca
+3813|Otros
+382|Diversos
+3821|Monedas y joyas
+3822|Bienes entregados en comodato
+3823|Bienes recibidos en pago (adjudicados y realizables)
+3829|Otros
+39|DEPRECIACIÓN y AMORTIZACIÓN ACUMULADOS
+391|Depreciación acumulada propiedades de inversión
+3911|Edificaciones
+39111|Costo
+39112|Revaluación
+39113|Costo de financiación
+392|Depreciación acumulada propiedades de inversión - Arrendamiento financiero
+3921|Edificaciones
+39211|Costo
+39212|Revaluación
+39213|Costo de financiación
+393|Depreciación acumulada propiedad, planta y equipo - Arrendamiento financiero
+3932|Edificaciones
+39321|Costo
+39322|Revaluación
+39323|Costo de financiación
+3933|Maquinarias y equipos de explotación
+39331|Costo
+39332|Revaluación
+39333|Costo de financiación
+3934|Unidades de transporte
+39341|Costo
+39342|Revaluación
+3935|Muebles y enseres
+39351|Costo
+38352|Revaluación
+3936|Equipos diversos
+39361|Costo
+39362|Revaluación
+394|Depreciación acumulada - Arrendamiento operativo
+3941|Activos por derecho de uso - arrendamiento operativo
+39410|Plantas productoras
+39411|Terrenos
+39412|Edificaciones
+39413|Maquinarias y equipos de explotación
+39414|Unidades de transporte
+39415|Equipos diversos
+395|Depreciación acumulada de propiedad, planta y equipo
+3952|Depreciación acumulada - Costo
+39520|Plantas productoras
+39521|Edificaciones
+39522|Instalaciones
+39523|Mejoras en locales arrendados
+39524|Maquinarias y equipos de explotación
+39525|Unidades de transporte
+39526|Muebles y enseres
+39527|Equipos diversos
+39528|Herramientas
+39529|Unidades de reemplazo
+3953|Propiedad, planta y equipo - Revaluación
+39530|Plantas productoras
+39531|Edificaciones
+39532|Instalaciones
+39533|Mejoras en locales arrendados
+39534|Maquinarias y equipos de explotación
+39535|Unidades de transporte
+39536|Muebles y enseres
+39537|Equipos diversos
+39538|Herramientas y unidades de reemplazo
+3954|Propiedad, planta y equipo - Costo de financiación
+39540|Plantas productoras
+39541|Edificaciones
+39542|Maquinarias y equipos de explotación
+3955|Propiedad, planta y equipo - Valor razonable
+39550|Plantas productoras
+396|Amortización acumulada
+3961|Intangibles – Costo
+39611|Concesiones, licencias y otros derechos
+39612|Patentes y propiedad industrial
+39613|Programas de computadora (software)
+39614|Costos de exploración y desarrollo
+39615|Fórmulas, diseños y prototipos
+39619|Otros activos intangibles
+3962|Intangibles – Revaluación
+39621|Concesiones, licencias y otros derechos
+39622|Patentes y propiedad industrial
+39623|Programas de computadora (software)
+39624|Costos de exploración y desarrollo
+39625|Fórmulas, diseños y prototipos
+39629|Otros activos intangibles
+3963|Intangibles – Costos de financiación
+39633|Programas de computadora
+39634|Costos de exploración
+39635|Costos de desarrollo
+398|Depreciación acumulada - Activos biológicos en producción
+3981|Activos biológicos en producción - Costo
+39811|Activos biológicos en producción

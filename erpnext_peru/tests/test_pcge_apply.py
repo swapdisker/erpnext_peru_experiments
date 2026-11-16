@@ -489,6 +489,21 @@ class TestClientAccounts(PeruTestCase):
 		self.assertEqual(again.created, [])
 		self.assertEqual(again.unchanged, 7)
 
+	def test_coa_cc_04_invalid_code_is_rejected_and_the_rest_continues(self):
+		rows = [
+			{"code": "A0411", "name": "Empieza con una letra"},
+			{"code": "104-105", "name": "Con guion"},
+			{"code": "104105", "name": "Scotiabank Soles"},
+		]
+		report = import_client_accounts(PCGE_COMPANY, rows)
+		self.assertEqual(
+			[(r["line"], r["code"], r["reason"]) for r in report.rejected],
+			[(1, "A0411", "code_not_numeric"), (2, "104-105", "code_not_numeric")],
+		)
+		self.assertEqual(report.created, ["104105"])
+		self.assertTrue(pcge_account("104105"))
+		self.assertEqual(frappe.db.count("Account", {"company": PCGE_COMPANY, "account_number": "A0411"}), 0)
+
 	def test_company_names_can_be_preferred(self):
 		report = import_client_accounts(
 			PCGE_COMPANY, [{"code": "1212", "name": "Facturas por cobrar emitidas"}], prefer_client_names=True

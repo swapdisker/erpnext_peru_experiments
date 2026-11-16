@@ -1,0 +1,189 @@
+70|VENTAS
+701|Mercaderías
+7011|Mercaderías - venta de exportación
+70111|Terceros
+70112|Relacionadas
+7012|Mercaderías - venta local
+70111|Terceros
+70112|Relacionadas
+702|Productos terminados
+7021|Productos terminados - venta de exportación
+70211|Terceros
+70212|Relacionadas
+7022|Productos terminados - venta local
+70221|Terceros
+70222|Relacionadas
+703|Servicios terminados
+7031|Servicios – exportación
+70311|Terceros
+70312|Relacionadas
+7032|Servicios – local
+70321|Terceros
+70322|Relacionadas
+704|Subproductos, desechos y desperdicios
+7041|Subproductos
+70411|Terceros
+70412|Relacionadas
+7042|Desechos y desperdicios
+70421|Terceros
+70422|Relacionadas
+709|Devoluciones sobre ventas
+7091|Mercaderías - Venta de exportación
+70911|Terceros
+70912|Relacionadas
+7092|Mercaderías - Venta local
+70921|Terceros
+70922|Relacionadas
+7093|Productos terminados - Venta de exportación
+70931|Terceros
+70932|Relacionadas
+7094|Productos terminados - Venta local
+70941|Terceros
+70942|Relacionadas
+7095|Inventarios de servicios rechazados
+70951|Terceros
+70952|Relacionadas
+7096|Subproductos, desechos y desperdicios
+70961|Terceros
+70962|Relacionadas
+71|VARIACIÓN DE LA PRODUCCIÓN ALMACENADA
+711|Variación de productos terminados
+7111|Productos terminados
+712|Variación de subproductos, desechos y desperdicios
+7121|Subproductos
+7122|Desechos y desperdicios
+713|Variación de productos en proceso
+7131|Productos en proceso de manufactura
+714|Variación de envases y embalajes
+7141|Envases
+7142|Embalajes
+715|Variación de inventarios de servicios
+7151|Inventarios de servicios en proceso
+72|PRODUCCIÓN DE ACTIVO INMOVILIZADO
+721|Propiedades de inversión
+7211|Edificaciones
+722|Propiedad, planta y equipo
+7220|Planta productora
+7221|Edificaciones
+7222|Maquinarias y otros equipos de explotación
+7223|Unidades de transporte
+7224|Muebles y enseres
+7225|Equipos diversos
+723|Intangibles
+7231|Programas de computadora (software)
+7232|Costos de exploración y desarrollo
+7233|Fórmulas, diseños y prototipos
+724|Activos biológicos
+7241|Activos biológicos en desarrollo de origen animal
+7242|Activos biológicos en desarrollo de origen vegetal
+725|Costos de financiación capitalizados
+7251|Costos de financiación – Propiedades de inversión
+72511|Plantas productoras en desarrollo
+72512|Edificaciones
+7252|Costos de financiación – Propiedad, planta y equipo
+72521|Plantas productoras en desarrollo
+72522|Edificaciones
+72523|Maquinarias y otros equipos de explotación
+7253|Costos de financiación – Intangibles
+7254|Costos de financiación – Activos biológicos en desarrollo
+72541|Activos biológicos de origen animal
+72542|Activos biológicos de origen vegetal
+73|DESCUENTOS, REBAJAS Y BONIFICACIONES OBTENIDOS
+731|Descuentos, rebajas y bonificaciones obtenidos
+7311|Terceros
+7312|Relacionadas
+74|DESCUENTOS, REBAJAS y BONIFICACIONES CONCEDIDOS
+741|Descuentos, rebajas y bonificaciones concedidos
+7411|Terceros
+7412|Relacionadas
+75|OTROS INGRESOS DE GESTIÓN
+751|Servicios en beneficio del personal
+752|Comisiones y corretajes
+753|Regalías
+754|Alquileres
+7540|Plantas productoras
+7541|Terrenos
+7542|Edificaciones
+7543|Maquinarias y equipos de explotación
+7544|Unidades de transporte
+7545|Equipos diversos
+755|Recuperación de cuentas de valuación
+7551|Recuperación – Cuentas de cobranza dudosa
+7552|Recuperación – Desvalorización de inventarios
+7553|Recuperación – Desvalorización de inversiones mobiliarias
+756|Enajenación de activos inmovilizados
+7561|Inversiones mobiliarias
+7562|Propiedades de inversión
+7563|Activos adquiridos en arrendamiento financiero
+7564|Propiedad, planta y equipo
+7565|Intangibles
+7566|Activos biológicos
+757|Recuperación de deterioro de cuentas de activos inmovilizados
+7571|Recuperación de deterioro de propiedades de inversión
+7572|Recuperación de deterioro de propiedad, planta y equipo
+7573|Recuperación de deterioro de intangibles
+7574|Recuperación de deterioro de activos biológicos
+759|Otros ingresos de gestión
+7591|Subsidios gubernamentales
+7592|Reclamos al seguro
+7593|Donaciones
+7594|Devoluciones tributarias
+7599|Otros ingresos de gestión
+76|GANANCIA POR MEDICIÓN DE ACTIVOS NO FINANCIEROS AL VALOR RAZONABLE
+761|Activo realizable
+7611|Mercaderías
+7612|Productos terminados
+7613|Activos no corrientes mantenidos para la venta
+76131|Propiedades de inversión
+76132|Propiedad, planta y equipo
+76133|Intangibles
+76134|Activos biológicos
+762|Activo inmovilizado
+7621|Propiedades de inversión
+7622|Activos biológicos
+77|INGRESOS FINANCIEROS
+771|Ganancia por instrumento financiero derivado
+772|Rendimientos ganados
+7721|Depósitos en instituciones financieras
+7722|Cuentas por cobrar comerciales
+7723|Préstamos otorgados
+7724|Inversiones a ser mantenidas hasta el vencimiento
+7725|Instrumentos financieros representativos de derecho patrimonial
+773|Dividendos
+774|Ingresos en operaciones de factoraje (factoring)
+775|Descuentos obtenidos por pronto pago
+776|Diferencia en cambio
+777|Ganancia por medición de activos y pasivos financieros al valor razonable
+7771|Inversiones mantenidas para negociación
+7772|Otras inversiones
+7773|Otras
+778|Participación en resultados de entidades relacionadas
+7781|Participación en los resultados de subsidiarias y asociadas bajo el método del valor patrimonial
+7782|Ingresos por participaciones en negocios conjuntos
+779|Otros ingresos financieros
+7792|Ingresos financieros en medición a valor descontado
+78|CARGAS CUBIERTAS POR PROVISIONES
+781|Cargas cubiertas por provisiones
+79|CARGAS IMPUTABLES A CUENTAS DE COSTOS Y GASTOS
+791|Cargas imputables a cuentas de costos y gastos
+792|Gastos financieros imputables a cuentas de inventarios
+80|MARGEN COMERCIAL
+801|Margen comercial
+81|PRODUCCIÓN DEL EJERCICIO
+811|Producción de bienes
+812|Producción de servicios
+813|Producción de activo inmovilizado
+82|VALOR AGREGADO
+821|Valor agregado
+83|EXCEDENTE BRUTO (INSUFICIENCIA BRUTA) DE EXPLOTACIÓN
+831|Excedente bruto (insuficiencia bruta) de explotación
+84|RESULTADO DE EXPLOTACIÓN
+841|Resultado de explotación
+85|RESULTADO ANTES DE IMPUESTO A LAS GANANCIAS
+851|Resultado antes del impuesto a las ganancias
+88|IMPUESTO A LAS GANANCIAS
+881|Impuesto a las ganancias – Corriente
+882|Impuesto a las ganancias – Diferido
+89|DETERMINACIÓN DEL RESULTADO DEL EJERCICIO
+891|Utilidad
+892|Pérdida

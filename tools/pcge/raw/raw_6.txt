@@ -1,0 +1,406 @@
+60|COMPRAS
+601|Mercaderías
+6011|Mercaderías
+602|Materias primas
+603|Materiales auxiliares, suministros y repuestos
+6031|Materiales auxiliares
+6032|Suministros
+6033|Repuestos
+604|Envases y embalajes
+6041|Envases
+6042|Embalajes
+609|Costos vinculados con las compras
+6091|Costos vinculados con las compras de mercaderías
+60911|Transporte
+60912|Seguros
+60913|Derechos aduaneros
+60914|Comisiones
+60919|Otros costos
+6092|Costos vinculados con las compras de materias primas
+60921|Transporte
+60922|Seguros
+60923|Derechos aduaneros
+60924|Comisiones
+60925|Otros costos
+6093|Costos vinculados con las compras de materiales, suministros y repuestos
+60931|Transporte
+60932|Seguros
+60933|Derechos aduaneros
+60934|Comisiones
+60935|Otros costos
+6094|Costos vinculados con las compras de envases y embalajes
+60941|Transporte
+60942|Seguros
+60943|Derechos aduaneros
+60944|Comisiones
+60945|Otros costos
+61|VARIACIÓN DE INVENTARIOS
+611|Mercaderías
+6111|Mercaderías
+612|Materias primas
+6121|Materias primas
+613|Materiales auxiliares, suministros y repuestos
+6131|Materiales auxiliares
+6132|Suministros
+6133|Repuestos
+614|Envases y embalajes
+6141|Envases
+6142|Embalajes
+62|GASTOS DE PERSONAL Y DIRECTORES
+621|Remuneraciones
+6211|Sueldos y salarios
+6212|Comisiones
+6213|Remuneraciones en especie
+6214|Gratificaciones
+6215|Vacaciones
+622|Otras remuneraciones
+623|Indemnizaciones al personal
+624|Capacitación
+625|Atención al personal
+627|Seguridad, previsión social y otras contribuciones
+6271|Régimen de prestaciones de salud
+6272|Régimen de pensiones - Aporte de empresa
+6273|Seguro complementario de trabajo de riesgo, accidentes de trabajo y enfermedades profesionales
+6274|Seguro de vida
+6275|Seguros particulares de prestaciones de salud – EPS y otros particulares
+6276|Caja de beneficios de seguridad social del pescador
+6277|Contribuciones al SENATI
+628|Retribuciones al directorio
+629|Beneficios sociales de los trabajadores
+6291|Compensación por tiempo de servicio
+6292|Pensiones y jubilaciones
+6293|Otros beneficios post-empleo
+6294|Participación en las utilidades
+62941|Participación corriente
+62942|Participación diferida
+63|GASTOS DE SERVICIOS PRESTADOS POR TERCEROS
+631|Transporte, correos y gastos de viaje
+6311|Transporte
+63111|De carga
+63112|De pasajeros
+6312|Correos
+6313|Alojamiento
+6314|Alimentación
+6315|Otros gastos de viaje
+632|Asesoría y consultoría
+6321|Administrativa
+6322|Legal y tributaria
+6323|Auditoría y contable
+6324|Mercadotecnia
+6325|Medioambiental
+6326|Investigación y desarrollo
+6327|Producción
+6329|Otros
+633|Producción encargada a terceros
+634|Mantenimiento y reparaciones
+6341|Propiedad de inversión
+6342|Activos por derecho de uso
+63421|Financiero
+63432|Operativo
+6343|Propiedad, planta y equipo
+6344|Intangibles
+6345|Activos biológicos
+635|Alquileres
+6351|Terrenos
+6352|Edificaciones
+6353|Maquinarias y equipos de explotación
+6354|Equipo de transporte
+6355|Muebles y enseres
+6356|Equipos diversos
+636|Servicios básicos
+6361|Energía eléctrica
+6362|Gas
+6363|Agua
+6364|Teléfono
+6365|Internet
+6366|Radio
+6367|Cable
+637|Publicidad, publicaciones, relaciones públicas
+6371|Publicidad
+6372|Publicaciones
+6373|Relaciones públicas
+638|Servicios de contratistas
+639|Otros servicios prestados por terceros
+6391|Gastos bancarios
+6392|Gastos de laboratorio
+64|GASTOS POR TRIBUTOS
+641|Gobierno nacional
+6411|Impuesto general a las ventas y selectivo al consumo
+6412|Impuesto a las transacciones financieras
+6413|Impuesto temporal a los activos netos
+6414|Impuesto a los juegos de casino y máquinas tragamonedas
+6415|Regalías mineras
+6416|Cánones
+6419|Otros
+642|Gobierno regional
+643|Gobierno local
+6431|Impuesto predial
+6432|Arbitrios municipales y seguridad ciudadana
+6433|Impuesto al patrimonio vehicular
+6434|Licencia de funcionamiento
+6439|Otros
+644|Otros gastos por tributos
+6442|Contribución al SENCICO
+6443|Otros
+645|Gastos en deuda tributaria
+6451|Intereses
+6452|intereses - fraccionamiento
+6453|Multas
+6454|Costas y otros
+65|OTROS GASTOS DE GESTION
+651|Seguros
+652|Regalías
+653|Suscripciones
+654|Licencias y derechos de vigencia
+655|Costo neto de enajenación de activos inmovilizados y operaciones discontinuadas
+6551|Costo neto de enajenación de activos inmovilizados
+65511|Inversiones mobiliarias
+65512|Propiedades de inversión
+65513|Activos por derecho de uso - arrendamiento financiero
+65514|Propiedad, planta y equipo
+65515|Intangibles
+65516|Activos biológicos
+6552|Operaciones discontinuadas – Abandono de activos
+65521|Propiedades de inversión
+65522|Activos por derecho de uso - Arrendamiento financiero
+65523|Propiedad, planta y equipo
+65524|Intangibles
+65525|Activos biológicos
+656|Suministros
+658|Gestión medioambiental
+659|Otros gastos de gestión
+6591|Donaciones
+6592|Sanciones administrativas
+66|PERDIDA POR MEDICIÓN DE ACTIVOS NO FINANCIEROS AL VALOR RAZONABLE
+661|Activo realizable
+6611|Mercaderías
+6612|Productos terminados
+6613|Activos no corrientes mantenidos para la venta
+66131|Propiedades de inversión
+66132|Propiedad, planta y equipo
+66133|Intangibles
+66134|Activos biológicos
+662|Activo inmovilizado
+6621|Propiedades de inversión
+6622|Activos biológicos
+67|GASTOS FINANCIEROS
+671|Gastos en operaciones de endeudamiento y otros
+6711|Préstamos de instituciones financieras y otras entidades
+6712|Contratos de arrendamiento financiero
+6713|Emisión y colocación de instrumentos representativos de deuda y patrimonio
+6714|Documentos vendidos o descontados
+672|Pérdida por instrumentos financieros derivados
+673|Intereses por préstamos y otras obligaciones
+6731|Préstamos de instituciones financieras y otras entidades
+67311|Instituciones financieras
+67312|Otras entidades
+6732|Contratos de arrendamiento financiero
+6733|Otros instrumentos financieros por pagar
+6734|Documentos vendidos o descontados
+6735|Obligaciones emitidas
+6736|Obligaciones comerciales
+674|Gastos en operaciones de factoraje (factoring)
+6741|Pérdida en instrumentos vendidos
+675|Descuentos concedidos por pronto pago
+676|Diferencia de cambio
+677|Pérdida por medición de activos y pasivos financieros al valor razonable
+6771|Inversiones mantenidas para negociación
+6772|Otras inversiones financieras
+6773|Otros
+678|Participación en resultados de entidades relacionadas
+6781|Participación en los resultados de subsidiarias y asociadas bajo el método del valor patrimonial
+6782|Participaciones en negocios conjuntos
+679|Otros gastos financieros
+6791|Primas por opciones
+6792|Gastos financieros en medición a valor descontado
+6793|Gastos financieros en actualización de activos por derecho de uso
+68|VALUACIÓN Y DETERIORO DE ACTIVOS Y PROVISIONES
+681|Depreciación de propiedades de inversión
+6811|Edificaciones
+68111|Costo
+68112|Revaluación
+68113|Costo de financiación
+682|Depreciación de activos por derecho de uso - arrendamiento financiero
+6821|Propiedades de inversión
+68211|Edificaciones
+682111|Costo
+682112|Revaluación
+682113|Costo de financiación
+6822|Propiedad, planta y equipo
+68221|Edificaciones
+682211|Costo
+682212|Revaluación
+682213|Costo de financiación
+68222|Maquinarias y equipos de explotación
+682221|Costo
+682222|Revaluación
+682223|Costo de financiación
+68223|Unidades de transporte
+682231|Costo
+682232|Revaluación
+68225|Equipos diversos
+682251|Costo
+682252|Revaluación
+683|Depreciación de activos por derecho de uso - arrendamiento operativo
+6831|Depreciación de activos por derecho de uso - arrendamiento operativo
+68311|Edificaciones
+683111|Costo
+683112|Revaluación
+68312|Maquinarias y equipos de explotación
+683121|Costo
+683122|Revaluación
+68313|Unidades de transporte
+683131|Costo
+683132|Revaluación
+68315|Equipos diversos
+683351|Costo
+683152|Revaluación
+684|Depreciación de propiedad, planta y equipo
+6841|Depreciación de propiedad, planta y equipo - Costo
+68410|Plantas productoras
+68411|Edificaciones
+68412|Maquinarias y equipos de explotación
+68413|Unidades de transporte
+68414|Muebles y enseres
+68415|Equipos diversos
+68416|Herramientas y unidades de reemplazo
+6842|Depreciación de propiedad, planta y equipo - Revaluación
+68420|Plantas productoras
+68421|Edificaciones
+68422|Maquinarias y equipos de explotación
+68423|Unidades de transporte
+68424|Muebles y enseres
+68425|Equipos diversos
+68426|Herramientas y unidades de reemplazo
+6843|Depreciación de propiedad, planta y equipo - Costos de financiación
+68430|Plantas productoras
+68431|Edificaciones
+68432|Maquinarias y equipos de explotación
+685|Depreciación de activos biológicos en producción
+6851|Depreciación de activos biológicos en producción - costo
+68511|Activos biológicos de origen animal
+68512|Activos biológicos de origen vegetal
+6852|Depreciación de activos biológicos en producción - costo de financiación
+68521|Activos biológicos de origen animal
+68522|Activos biológicos de origen vegetal
+686|Amortización de intangibles
+6861|Amortización de intangibles – Costo
+68611|Concesiones, licencias y otros derechos
+68612|Patentes y propiedad industrial
+68613|Programas de computadora (software)
+68614|Costos de exploración y desarrollo
+68615|Fórmulas, diseños y prototipos
+68619|Otros activos intangibles
+6862|Amortización de intangibles – Revaluación
+68621|Concesiones, licencias y otros derechos
+68622|Patentes y propiedad industrial
+68623|Programas de computadora (software)
+68624|Costos de exploración y desarrollo
+68625|Fórmulas, diseños y prototipos
+68629|Otros activos intangibles
+687|Valuación de activos
+6871|Estimación de cuentas de cobranza dudosa
+68711|Cuentas por cobrar comerciales – Terceros
+68712|Cuentas por cobrar comerciales – Relacionadas
+68713|Cuentas por cobrar al personal, a los accionistas (socios) y directores
+68714|Cuentas por cobrar diversas – Terceros
+68715|Cuentas por cobrar diversas – Relacionadas
+6873|Desvalorización de inversiones mobiliarias
+68731|Inversiones a ser mantenidas hasta el vencimiento
+68732|Instrumentos financieros representativos de derecho patrimonial
+688|Deterioro del valor de los activos
+6882|Desvalorización de propiedad de inversión
+68812|Edificaciones
+68813|Construcciones en curso
+6882|Desvalorización de activos por derecho de uso - arrendamiento financiero
+68820|Planta productora en producción
+68821|Planta productora en desarrollo
+68822|Terrenos
+68823|Edificaciones
+68824|Maquinarias y equipos de explotación
+68825|Unidades de transporte
+68826|Muebles y enseres
+68827|Equipos diversos
+68828|Herramientas y unidades de reemplazo
+6883|Desvalorización de propiedad, planta y equipo
+68830|Planta productora en producción
+68831|Planta productora en desarrollo
+68832|Terrenos
+68833|Edificaciones
+68834|Maquinarias y equipos de explotación
+68835|Unidades de transporte
+68836|Muebles y enseres
+68837|Equipos diversos
+68838|Herramientas y unidades de reemplazo
+6884|Desvalorización de intangibles
+68841|Concesiones, licencias y otros derechos
+68842|Patentes y propiedad industrial
+68843|Programas de computadora (software)
+68844|Costos de exploración y desarrollo
+68845|Fórmulas, diseños y prototipos
+68846|Otros activos intangibles
+68847|Plusvalía mercantil
+6889|Desvalorización de activos biológicos en producción
+68891|Activos biológicos de origen animal
+68892|Activos biológicos de origen vegetal
+689|Provisiones
+6891|Provisión para litigios
+68911|Provisión para litigios – Costo
+68912|Provisión para litigios – Actualización financiera
+6892|Provisión por desmantelamiento, retiro o rehabilitación del inmovilizado
+68921|Provisión por desmantelamiento, retiro o rehabilitación del inmovilizado – Costo
+68922|Provisión por desmantelamiento, retiro o rehabilitación del inmovilizado – Actualización financiera
+6893|Provisión para reestructuraciones
+6894|Provisión para protección y remediación del medio ambiente
+68941|Provisión para protección y remediación del medio ambiente – Costo
+68942|Provisión para protección y remediación del medio ambiente – Actualización financiera
+6896|Provisión para garantías
+68961|Provisión para garantías – Costo
+68962|Provisión para garantías – Actualización financiera
+6897|Provisión por activos por derecho de uso
+68971|Provisión por activos por derecho de uso arrendamiento operativo
+68972|Provisión por activos por derecho de uso arrendamiento operativo - actualización financiera
+6899|Otras provisiones
+69|COSTO DE VENTAS
+691|Mercaderías
+6911|Mercaderías - exportación
+69111|Terceros
+69112|Relacionadas
+6912|Mercaderías - venta local
+69121|Terceros
+69122|Relacionadas
+692|Productos terminados
+6921|Productos terminados - Exportación
+69211|Terceros
+69212|Relacionadas
+6922|Productos terminados - Venta local
+69221|Terceros
+69222|Relacionadas
+6923|Costos de financiación – Productos terminados
+69231|Terceros
+69232|Relacionadas
+6924|Costos de producción no absorbido – Productos terminados
+6925|Costo de ineficiencia – Productos terminados
+693|Servicios terminados
+6931|Servicios – Exportación
+69311|Terceros
+69312|Relacionadas
+6932|Servicios – local
+69321|Terceros
+69322|Relacionadas
+694|Subproductos, desechos y desperdicios
+6941|Subproductos
+69411|Terceros
+69412|Relacionadas
+6942|Desechos y desperdicios
+69421|Terceros
+69422|Relacionadas
+695|Gastos por desvalorización de inventarios al costo
+6951|Mercaderías
+6952|Productos terminados
+6953|Subproductos, desechos y desperdicios
+6954|Productos en proceso
+6955|Materias primas
+6956|Materiales auxiliares, suministros y repuestos
+6957|Envases y embalajes
+6958|Inventarios por recibir

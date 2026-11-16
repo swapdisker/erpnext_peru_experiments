@@ -1,0 +1,239 @@
+40|TRIBUTOS, CONTRAPRESTACIONES Y APORTES AL SISTEMA PÚBLICO DE PENSIONES Y DE SALUD POR PAGAR
+401|Gobierno nacional
+4011|Impuesto general a las ventas
+40111|IGV – Cuenta propia
+40112|IGV – Servicios prestados por no domiciliados
+40113|IGV – Régimen de percepciones
+40114|IGV – Régimen de retenciones
+40115|IGV – Importaciones
+40116|IGV – Destinado a operaciones gravadas
+40117|IGV - Destinado a operaciones comunes
+4012|Impuesto selectivo al consumo
+4015|Derechos aduaneros
+40151|Derechos arancelarios
+40152|Otros derechos arancelarios
+4017|Impuesto a la renta
+40171|Renta de tercera categoría
+40172|Renta de cuarta categoría
+40173|Renta de quinta categoría
+40174|Renta de no domiciliados
+40175|Otras retenciones
+4018|Otros impuestos y contraprestaciones
+40181|Impuesto a las transacciones financieras
+40182|Impuesto a los juegos de casino y tragamonedas
+40183|Tasas por la prestación de servicios públicos
+40184|Regalías
+40185|Impuesto a los dividendos
+40186|Impuesto temporal a los activos netos
+40189|Otros impuestos
+402|Certificados tributarios
+403|Instituciones públicas
+4031|ESSALUD
+4032|ONP
+4033|Contribución al SENATI
+4034|Contribución al SENCICO
+4039|Otras instituciones
+405|Gobiernos regionales
+406|Gobiernos locales
+4061|Impuestos
+40611|Impuesto al patrimonio vehicular
+40612|Impuesto a las apuestas
+40613|Impuesto a los juegos
+40614|Impuesto de alcabala
+40615|Impuesto predial
+40616|Impuesto a los espectáculos públicos no deportivos
+4062|Contribuciones
+4063|Tasas
+40631|Licencia de apertura de establecimientos
+40632|Transporte público
+40633|Estacionamiento de vehículos
+40634|Servicios públicos o arbitrios
+40635|Servicios administrativos o derechos
+409|Otros costos administrativos e intereses
+41|REMUNERACIONES Y PARTICIPACIONES POR PAGAR
+411|Remuneraciones por pagar
+4111|Sueldos y salarios por pagar
+4112|Comisiones por pagar
+4113|Remuneraciones en especie por pagar
+4114|Gratificaciones por pagar
+4115|Vacaciones por pagar
+413|Participaciones de los trabajadores por pagar
+415|Beneficios sociales de los trabajadores por pagar
+4151|Compensación por tiempo de servicios
+4152|Adelanto de compensación por tiempo de servicios
+4153|Pensiones y jubilaciones
+417|Administradoras de fondos de pensiones
+419|Otras remuneraciones y participaciones por pagar
+42|CUENTAS POR PAGAR COMERCIALES TERCEROS
+421|Facturas, boletas y otros comprobantes por pagar
+4211|No emitidas
+4212|Emitidas
+422|Anticipos a proveedores
+423|Letras por pagar
+424|Honorarios por pagar
+43|CUENTAS POR PAGAR COMERCIALES RELACIONADAS
+431|Facturas, boletas y otros comprobantes por pagar
+4311|No emitidas
+4312|Emitidas
+432|Anticipos otorgados
+4321|Anticipos otorgados
+433|Letras por pagar
+4331|Letras por pagar
+434|Honorarios por pagar
+4341|Honorarios por pagar
+44|CUENTAS POR PAGAR A LOS ACCIONISTAS (SOCIOS, PARTÍCIPES) Y DIRECTORES
+441|Accionistas ( socios, partícipes)
+4411|Préstamos
+4412|Dividendos
+4419|Otras cuentas por pagar
+442|Directores
+4421|Dietas
+4429|Otras cuentas por pagar
+45|OBLIGACIONES FINANCIERAS
+451|Préstamos de instituciones financieras y otras entidades
+4511|Instituciones financieras
+4512|Otras entidades
+452|Contratos de arrendamiento financiero
+453|Obligaciones emitidas
+4531|Bonos emitidos
+4532|Bonos titulizados
+4533|Papeles comerciales
+4539|Otras obligaciones
+454|Otros Instrumentos financieros por pagar
+4541|Letras
+4542|Papeles comerciales
+4543|Bonos
+4544|Pagarés
+4545|Facturas conformadas
+4549|Otras obligaciones financieras
+455|Costos de financiación por pagar
+4551|Préstamos de instituciones financieras y otras entidades
+45511|Instituciones financieras
+45512|Otras entidades
+4552|Contratos de arrendamiento financiero
+4553|Obligaciones emitidas
+45531|Bonos emitidos
+45532|Bonos titulizados
+45533|Papeles comerciales
+45539|Otras obligaciones
+4554|Otros instrumentos financieros por pagar
+45541|Letras
+45542|Papeles comerciales
+45543|Bonos
+45544|Pagarés
+45545|Facturas conformadas
+45549|Otras obligaciones financieras
+456|Préstamos con compromisos de recompra
+46|CUENTAS POR PAGAR DIVERSAS – TERCEROS
+461|Reclamaciones de terceros
+464|Pasivos por instrumentos financieros
+4641|Instrumentos financieros primarios
+4642|Instrumentos financieros derivados
+46421|Cartera de negociación
+46422|Instrumentos de cobertura
+465|Pasivos por compra de activo inmovilizado
+4651|Inversiones mobiliarias
+4652|Propiedades de inversión
+4653|Activos adquiridos en arrendamiento financiero
+4654|Propiedad, planta y equipo
+4655|Intangibles
+4656|Activos biológicos
+466|Participación de terceros en acuerdos conjuntos
+467|Depósitos recibidos en garantía
+469|Otras cuentas por pagar diversas
+4691|Subsidios gubernamentales
+4692|Donaciones condicionadas
+4699|Otras cuentas por pagar
+47|CUENTAS POR PAGAR DIVERSAS – RELACIONADAS
+471|Préstamos
+472|Costos de financiación
+473|Anticipos recibidos
+474|Regalías
+475|Dividendos
+476|Depósitos recibidos en garantía
+477|Pasivo por compra de activo inmovilizado
+4771|Inversiones mobiliarias
+4772|Inversiones inmobiliarias
+4773|Activos adquiridos en arrendamiento financiero
+4774|Propiedad, planta y equipo
+4775|Intangibles
+4776|Activos biológicos
+479|Otras cuentas por pagar diversas
+4791|Otras cuentas por pagar diversas
+48|PROVISIONES
+481|Provisión para litigios
+482|Provisión por desmantelamiento, retiro o rehabilitación del inmovilizado
+483|Provisión para reestructuraciones
+484|Provisión para protección y remediación del medio ambiente
+485|Provisión para gastos de responsabilidad social
+486|Provisión para garantías
+487|Provisión por activos por derecho de uso
+489|Otras provisiones
+49|PASIVO DIFERIDO
+491|Impuesto a la renta diferido
+4911|Impuesto a la renta diferido – Patrimonio
+4912|Impuesto a la renta diferido – Resultados
+492|Participaciones de los trabajadores diferidas
+4921|Participaciones de los trabajadores diferidas – Patrimonio
+4922|Participaciones de los trabajadores diferidas – Resultados
+493|Intereses diferidos
+4931|Intereses no devengados en transacciones con terceros
+4932|Intereses no devengados en medición a valor descontado
+494|Ganancia en venta con arrendamiento financiero paralelo
+495|Subsidios recibidos diferidos
+496|Ingresos diferidos
+497|Costos diferidos
+50|CAPITAL
+501|Capital social
+5011|Acciones
+5012|Participaciones
+502|Acciones en tesorería
+51|ACCIONES DE INVERSIÓN
+511|Acciones de inversión
+512|Acciones de inversión en tesorería
+52|CAPITAL ADICIONAL
+521|Primas (descuento) de acciones
+522|Capitalizaciones en trámite
+5221|Aportes
+5222|Reservas
+5223|Acreencias
+5224|Utilidades
+523|Reducciones de capital pendientes de formalización
+56|RESULTADOS NO REALIZADOS
+561|Diferencia en cambio de inversiones permanentes en entidades extranjeras
+562|Instrumentos financieros – Coberturas
+563|Resultado en activos o pasivos financieros mantenidos para negociación
+5631|Ganancia
+5632|Pérdida
+564|Resultado en otros activos o pasivos por inversiones financieras
+5641|Ganancia
+5642|Pérdida
+565|Resultado en activos o pasivos financieros mantenidos para negociación – Compra o venta convencional fecha de liquidación
+5651|Ganancia
+5652|Pérdida
+57|EXCEDENTE DE REVALUACIÓN
+571|Excedente de revaluación
+5711|Propiedad de inversión
+57111|Adquisición directa
+57112|Arrendamiento financiero
+5712|Propiedad, planta y equipo
+57121|Adquisición directa
+57122|Arrendamiento financiero
+5713|Intangibles
+5714|Activos por derecho de uso - arrendamiento operativo
+572|Excedente de revaluación – Acciones liberadas recibidas
+573|Participación en excedente de revaluación – Inversiones en entidades relacionadas
+58|RESERVAS
+581|Reinversión
+582|Legal
+583|Contractuales
+584|Estatutarias
+585|Facultativas
+589|Otras reservas
+59|RESULTADOS ACUMULADOS
+591|Utilidades no distribuidas
+5911|Utilidades acumuladas
+5912|Ingresos de años anteriores
+592|Pérdidas acumuladas
+5921|Pérdidas acumuladas
+5922|Gastos de años anteriores

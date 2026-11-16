@@ -1,0 +1,258 @@
+30|INVERSIONES MOBILIARIAS
+301|Inversiones a ser mantenidas hasta el vencimiento
+3011|Instrumentos financieros representativos de deuda
+30221|Costo
+30224|Valor razonable
+302|Instrumentos financieros representativos de derecho patrimonial
+3021|Certificados de suscripción preferente
+3022|Acciones representativas de capital social – Comunes
+30221|Costo
+30224|Valor razonable
+30225|Participación patrimonial
+3023|Acciones representativas de capital social – Preferentes
+30231|Costo
+30234|Valor razonable
+30235|Participación patrimonial
+3024|Acciones de inversión
+30241|Costo
+30244|Valor razonable
+30245|Participación patrimonial
+3028|Otros títulos representativos de patrimonio
+30281|Costo
+30284|Valor razonable
+30285|Participación patrimonial
+303|Certificados de participación en fondos - Cuotas
+3031|Fondos de inversión
+30311|Costo
+30314|Valor razonable
+3032|Fondos mutuos
+30321|Costo
+30324|Valor razonable
+304|Participaciones en acuerdos conjuntos
+3041|Operaciones conjuntas
+30411|Costo
+30414|Valor razonable
+30415|Participación patrimonial
+3042|Negocios conjuntos
+30421|Costo
+30424|Valor razonable
+30425|Participación patrimonial
+308|Inversiones mobiliarias – Acuerdos de compra
+3081|Instrumentos financieros representativos de deuda – Acuerdo de compra
+30811|Costo
+30814|Valor razonable
+3082|Instrumentos financieros representativos de derecho patrimonial – Acuerdo de compra
+30821|Costo
+30824|Valor razonable
+31|PROPIEDADES DE INVERSIÓN
+311|Terrenos
+3111|Urbanos
+31111|Costo
+31112|Revaluación
+31114|Valor razonable
+3112|Rurales
+31121|Costo
+31122|Revaluación
+31124|Valor razonable
+312|Edificaciones
+3121|Edificaciones
+31211|Costo
+31212|Revaluación
+31213|Costos de financiación
+31214|Valor razonable
+313|Construcciones en curso
+3131|Edificaciones
+31311|Costo
+31312|Revaluación
+31313|Costos de financiación
+31314|Valor razonable
+32|ACTIVOS POR DERECHO DE USO
+321|Propiedades de inversión - Arrendamiento financiero
+3211|Terrenos
+32111|Costo
+32112|Revaluación
+32114|Valor razonable
+3212|Edificaciones
+32121|Costo
+32122|Revaluación
+32123|Costo de financiación
+32124|Valor razonable
+322|Propiedad, planta y equipo - Arrendamiento financiero
+3220|Planta productora en producción
+32201|Costo
+32202|Revaluación
+32203|Costo de financiación
+3221|Planta productora en desarrollo
+32211|Costo
+32212|Revaluación
+32213|Costo de financiación
+3222|Terrenos
+32221|Costo
+32222|Revaluación
+3223|Edificaciones
+32231|Costo
+32232|Revaluación
+32233|Costo de financiación
+3224|Maquinaria y equipo de explotación
+32241|Costo
+32242|Revaluación
+32243|Costo de financiación
+3225|Unidades de transporte
+32251|Costo
+32252|Revaluación
+3226|Muebles y enseres
+32261|Costo
+32262|Revaluación
+3227|Equipos diversos
+32271|Costo
+32272|Revaluación
+3228|Herramientas y unidades de reemplazo
+32281|Costo
+32282|Revaluación
+323|Propiedad, planta y equipo - Arrendamiento operativo
+3230|Planta productora en producción
+32301|Costo
+32302|Revaluación
+3232|Terrenos
+32321|Costo
+3233|Edificaciones
+32331|Costo
+32332|Revaluación
+3234|Maquinaria y equipo de explotación
+32341|Costo
+32342|Revaluación
+3235|Unidades de transporte
+32351|Costo
+32352|Revaluación
+3236|Equipos diversos
+32361|Costo
+32362|Revaluación
+33|PROPIEDAD, PLANTA Y EQUIPO
+330|Planta productora
+3301|Planta productora en producción
+33011|Costo
+33012|Revaluación
+33013|Costo de financiación
+33014|Valor razonable
+3302|Planta productora en desarrollo
+33021|Costo
+33022|Revaluación
+33023|Costo de financiación
+33024|Valor razonable
+331|Terrenos
+3311|Terrenos
+33111|Costo
+33112|Revaluación
+332|Edificaciones
+3321|Edificaciones
+33211|Costo
+33212|Revaluación
+33213|Costo de financiación
+3324|Instalaciones
+33241|Costo
+33242|Revaluación
+33243|Costo de financiación
+3325|Mejoras en locales arrendados.
+33251|Costo
+33252|Revaluación
+33253|Costo de Financiación
+333|Maquinaria y equipo de explotación
+3331|Maquinaria y equipo de explotación
+33311|Costo
+33312|Revaluación
+33313|Costo de financiación
+334|Unidades de transporte
+3341|Vehículos motorizados
+33411|Costo
+33412|Revaluación
+3342|Vehículos no motorizados
+33421|Costo
+33422|Revaluación
+335|Muebles y enseres
+3351|Muebles
+33511|Costo
+33512|Revaluación
+3352|Enseres
+33521|Costo
+33522|Revaluación
+336|Equipos diversos
+3361|Equipo para procesamiento de información
+33611|Costo
+33612|Revaluación
+3362|Equipo de comunicación
+33621|Costo
+33622|Revaluación
+3363|Equipo de seguridad
+33631|Costo
+33632|Revaluación
+3364|Equipo de medio ambiente
+33641|Costo
+33642|Revaluación
+3369|Otros equipos
+33691|Costo
+33692|Revaluación
+337|Herramientas y unidades de reemplazo
+3371|Herramientas
+33711|Costo
+33712|Revaluación
+3372|Unidades de reemplazo
+33721|Costo
+33722|Revaluación
+338|Unidades por recibir
+3381|Maquinaria y equipo de explotación
+3382|Equipo de transporte
+3383|Muebles y enseres
+3386|Equipos diversos
+3387|Herramientas y unidades de reemplazo
+339|Obras en curso
+3391|Adecuación de terrenos
+3392|Edificaciones en curso
+33921|Costo
+33922|Costo de financiación
+3393|Maquinaria en montaje
+33931|Costo
+33932|Costo de financiación
+34|INTANGIBLES
+341|Concesiones, licencias y otros derechos
+3411|Derechos por concesiones
+34111|Costo
+34112|Revaluación
+3412|Licencias
+34121|Costo
+34122|Revaluación
+3419|Otros derechos
+34191|Costo
+34192|Revaluación
+342|Patentes y propiedad industrial
+3421|Patentes
+34211|Costo
+34212|Revaluación
+3422|Marcas
+34221|Costo
+34222|Revaluación
+343|Programas de computadora (software)
+3431|Aplicaciones informáticas
+34311|Costo
+34312|Revaluación
+344|Costos de exploración y desarrollo
+3441|Costos de exploración
+34411|Costo
+34412|Revaluación
+34413|Costo de financiación
+3442|Costos de desarrollo
+34421|Costo
+34422|Revaluación
+34423|Costo de financiación
+345|Fórmulas, diseños y prototipos
+3451|Fórmulas
+34511|Costo
+34512|Revaluación
+3452|Diseños y prototipos
+34521|Costo
+34522|Revaluación
+347|Plusvalía mercantil
+3471|Plusvalía mercantil
+349|Otros activos intangibles
+3491|Otros activos intangibles
+34911|Costo
+34912|Revaluación
