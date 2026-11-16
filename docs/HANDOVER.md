@@ -19,7 +19,8 @@ What it does, in one paragraph: it validates Peruvian identity documents on cust
 suppliers; adds comprobante type, series and a gapless number to sales invoices and enforces
 the Factura / Boleta rules on submission; records the supplier's document on purchase invoices;
 loads the PCGE 2019 chart of accounts into a company; and sets up the IGV tax templates. The
-README describes each feature from the user's side.
+`docs/FEATURES.md` (English) and `docs/FUNCIONALIDADES.md` (Spanish) describe each feature from
+the user's side.
 
 ## 2. State against the Phase 1 proposal
 
@@ -39,7 +40,7 @@ README describes each feature from the user's side.
 | Step 4 — destination entries (6 → 9 / 79) | Not started. |
 | Step 5 — e-invoicing (UBL, provider, CDR) | Not started. |
 | Step 6 — print format | Only the amount-in-words function. |
-| Step 7 — tests on v15 and v16, documentation | v15 only. README in English and Spanish. |
+| Step 7 — tests on v15 and v16, documentation | v15 only. Feature descriptions in English and Spanish. |
 | CONCAR toolkit, reconciliation, SIRE | Not started. |
 | Annexure A scenarios with an automated test | CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03, MD-CC-01..04, TX-UC-01..03, TX-CC-01..03 (20 of 81). Test names carry the ID. |
 
@@ -404,7 +405,9 @@ Blocked on the client: 5, 7, 8, 9, 10. Blocked on the accountant: 3, 4, 10.
 ## 13. File map
 
 ```
-README.md                       what the app does, for users (English and Spanish)
+README.md                       short overview and links
+docs/FEATURES.md                what the app does, for users (English)
+docs/FUNCIONALIDADES.md         the same in Spanish
 docs/HANDOVER.md                this document
 tools/
   pcge/raw/                     the MEF catalogue as printed
