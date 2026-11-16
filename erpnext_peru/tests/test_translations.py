@@ -23,6 +23,8 @@ NOT_TRANSLATED_HERE = {
 	"Series",
 	"Number",
 	"Full Name",
+	"Setup",
+	"Documents",
 }
 
 
@@ -63,6 +65,12 @@ def source_strings() -> set[str]:
 			for key in ("label", "description"):
 				if field.get(key):
 					strings.add(field[key])
+	# card titles of the workspace that are the app's own wording
+	for path in glob.glob(os.path.join(APP_DIR, "erpnext_peru", "workspace", "*", "*.json")):
+		with open(path, encoding="utf-8") as handle:
+			workspace = json.load(handle)
+		strings.add(workspace["label"])
+		strings.update(row["label"] for row in workspace["links"] if row["type"] == "Card Break")
 	return strings
 
 

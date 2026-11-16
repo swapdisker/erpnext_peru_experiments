@@ -144,7 +144,7 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **241 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+- **247 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
   on two sites, one of them a fresh install.
 - **Mutation check: 59 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
@@ -275,7 +275,8 @@ Found while building. Some are settings to change, some are traps.
 - **No roles or permissions of its own.** The form actions require System Manager or Accounts
   Manager; the catalogue masters are readable by everyone. The proposal's Migration User /
   Migration Approver roles do not exist yet.
-- **No workspace or menu entry.** Everything is reached through existing forms and search.
+- **The "Peru" workspace** (sidebar entry with shortcuts to the series, the catalogues and
+  the related standard documents) was added last and has **not been seen in a browser**.
 - **The repository is marked "do not use"** in its README, at the owner's request.
 
 ## 9. State of the screens
@@ -290,6 +291,7 @@ Seen on a Frappe Cloud site (ERPNext v15, Spanish interface):
 
 Never seen in a browser:
 
+- The "Peru" entry in the sidebar: its icon, shortcuts and cards.
 - The SUNAT section on Sales Invoice and Purchase Invoice: placement, the read-only number,
   the note fields that should appear only on credit and debit notes.
 - **The "Perú" menu on the Company form** ("Aplicar PCGE 2019", "Configurar IGV"). It is
@@ -432,6 +434,7 @@ erpnext_peru/
     install.py                  creates fields, loads catalogues (install and migrate)
     ubigeo.py                   CSV loader
   data/                         sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json
+  erpnext_peru/workspace/peru/  the "Peru" entry in the sidebar
   erpnext_peru/doctype/         SUNAT Comprobante Type, Identity Document Type, Credit Note
                                 Reason, Debit Note Reason, IGV Affectation Type, Voucher
                                 Series; Ubigeo
@@ -448,3 +451,4 @@ erpnext_peru/
 | — | `README: mark the repository as a local experiment…` | Warning banner. |
 | 0.2.0 | `Add PCGE 2019 chart of accounts and IGV tax templates` | PCGE, IGV, catalogue 07, the "Perú" menu, the tax-line rule on sales invoices. |
 | 0.2.0 | this commit | Handover rewritten; PCGE transcription, build script and mutation list added to the repository. |
+| 0.2.0 | `Add a Peru workspace to the sidebar` | Sidebar entry with shortcuts and cards. |

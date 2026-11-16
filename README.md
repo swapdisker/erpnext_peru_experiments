@@ -69,7 +69,7 @@ bench get-app <repository-url>
 bench --site <site> install-app erpnext_peru
 ```
 
-Requires ERPNext v15. Then:
+Requires ERPNext v15. The app adds a **Peru** entry to the sidebar with shortcuts to everything below. Then:
 
 1. Enter the RUC in the **Tax ID** of the company.
 2. Turn on **Disable Rounded Total** in Global Defaults: comprobantes are issued to the céntimo.
