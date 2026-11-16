@@ -49,6 +49,13 @@ class TestInstall(PeruTestCase):
 					if field["fieldtype"] not in ("Section Break", "Column Break"):
 						self.assertIn(field["fieldname"], columns)
 
+	def test_identity_fields_are_in_the_quick_entry_dialog(self):
+		for doctype in ("Customer", "Supplier"):
+			meta = frappe.get_meta(doctype)
+			for fieldname in ("pe_identity_type", "pe_identity_number"):
+				with self.subTest(doctype=doctype, fieldname=fieldname):
+					self.assertEqual(meta.get_field(fieldname).allow_in_quick_entry, 1)
+
 	def test_all_custom_fields_use_the_pe_prefix(self):
 		for fields in CUSTOM_FIELDS.values():
 			for field in fields:

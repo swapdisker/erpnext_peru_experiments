@@ -21,6 +21,8 @@ def _identity_fields(insert_after: str) -> list[dict]:
 			"options": "SUNAT Identity Document Type",
 			"insert_after": insert_after,
 			"in_standard_filter": 1,
+			# shown in the "new Customer / Supplier" pop-up, not only in the full form
+			"allow_in_quick_entry": 1,
 		},
 		{
 			"fieldname": "pe_identity_number",
@@ -28,6 +30,7 @@ def _identity_fields(insert_after: str) -> list[dict]:
 			"fieldtype": "Data",
 			"length": 15,
 			"insert_after": "pe_identity_type",
+			"allow_in_quick_entry": 1,
 			"in_standard_filter": 1,
 			"in_global_search": 1,
 			"search_index": 1,
