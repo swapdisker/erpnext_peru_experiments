@@ -279,7 +279,7 @@ M = [
 	("accounts/pcge.py", "		if code in seen:", "		if False:", "b", "test_pcge_apply"),
 	(
 		"accounts/pcge.py",
-		'	if not dry_run and (report.created or report.converted_to_group):\n		rebuild_tree("Account", "parent_account")\n\n	_set_company_defaults',
+		'\tif not dry_run and (report.created or report.converted_to_group):\n\t\trebuild_tree("Account")  # one argument: Frappe v16 no longer accepts the parent field\n\n\t_set_company_defaults',
 		"	_set_company_defaults",
 		"b",
 		"test_pcge_apply",
