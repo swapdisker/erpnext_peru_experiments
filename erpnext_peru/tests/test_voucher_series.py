@@ -4,6 +4,7 @@
 
 import threading
 import time
+from unittest.mock import patch
 
 import frappe
 
@@ -11,7 +12,7 @@ from erpnext_peru.erpnext_peru.doctype.sunat_voucher_series.sunat_voucher_series
 	allocate_next_number,
 	get_enabled_series,
 )
-from erpnext_peru.overrides.common import ComprobanteError
+from erpnext_peru.overrides.common import ComprobanteError, SeriesBusyError
 from erpnext_peru.tests.utils import (
 	FOREIGN_COMPANY,
 	PERU_COMPANY,
@@ -124,6 +125,79 @@ class TestVoucherSeries(PeruTestCase):
 		self.assertEqual(get_enabled_series(PERU_COMPANY, "07", "F"), ["FC01"])
 		self.assertEqual(get_enabled_series(PERU_COMPANY, "07", "B"), ["BC01"])
 		self.assertEqual(get_enabled_series(PERU_COMPANY, "01"), [])
+
+
+class TestCounterLock(PeruTestCase):
+	"""What happens when the database refuses the lock on the counter row."""
+
+	SNAPSHOT_SQL = "SHOW SESSION VARIABLES LIKE 'innodb_snapshot_isolation'"
+
+	def refused_with(self, error):
+		real = frappe.db.get_value
+
+		def get_value(*args, **kwargs):
+			if kwargs.get("for_update"):
+				raise error
+			return real(*args, **kwargs)
+
+		return patch.object(frappe.db, "get_value", get_value)
+
+	def test_refused_lock_asks_to_submit_again_and_allocates_nothing(self):
+		import pymysql
+
+		make_series("01", "F001")
+		for error in (
+			frappe.QueryDeadlockError("deadlock"),
+			pymysql.err.OperationalError(1020, "Record has changed since last read"),
+			pymysql.err.OperationalError(1213, "Deadlock found"),
+		):
+			with self.subTest(error=repr(error)), self.refused_with(error):
+				with self.assertRaises(SeriesBusyError) as raised:
+					allocate_next_number(PERU_COMPANY, "01", "F001")
+				self.assertIn("submit it again", str(raised.exception))
+		self.assertEqual(frappe.db.get_value("SUNAT Voucher Series", {"series": "F001"}, "current_number"), 0)
+		self.assertEqual(allocate_next_number(PERU_COMPANY, "01", "F001"), 1)
+
+	def test_other_database_errors_are_not_disguised(self):
+		import pymysql
+
+		make_series("01", "F001")
+		error = pymysql.err.OperationalError(1205, "Lock wait timeout exceeded")
+		with self.refused_with(error), self.assertRaises(pymysql.err.OperationalError):
+			allocate_next_number(PERU_COMPANY, "01", "F001")
+		with self.refused_with(ZeroDivisionError()), self.assertRaises(ZeroDivisionError):
+			allocate_next_number(PERU_COMPANY, "01", "F001")
+
+	def test_connection_setting_is_left_as_it_was(self):
+		make_series("01", "F001")
+		before = frappe.db.sql(self.SNAPSHOT_SQL)
+		allocate_next_number(PERU_COMPANY, "01", "F001")
+		self.assertEqual(frappe.db.sql(self.SNAPSHOT_SQL), before)
+		with self.refused_with(frappe.QueryDeadlockError("deadlock")), self.assertRaises(SeriesBusyError):
+			allocate_next_number(PERU_COMPANY, "01", "F001")
+		self.assertEqual(frappe.db.sql(self.SNAPSHOT_SQL), before)
+		with self.assertRaises(frappe.ValidationError):
+			allocate_next_number(PERU_COMPANY, "01", "F777")  # not registered
+		self.assertEqual(frappe.db.sql(self.SNAPSHOT_SQL), before)
+
+	def test_the_check_is_off_only_while_the_counter_is_advanced(self):
+		"""On servers that have the check (MariaDB 11.6.2+); elsewhere nothing to switch."""
+		make_series("01", "F001")
+		before = frappe.db.sql(self.SNAPSHOT_SQL)
+		seen = []
+		real = frappe.db.set_value
+
+		def set_value(*args, **kwargs):
+			seen.append(frappe.db.sql(self.SNAPSHOT_SQL))
+			return real(*args, **kwargs)
+
+		with patch.object(frappe.db, "set_value", set_value):
+			allocate_next_number(PERU_COMPANY, "01", "F001")
+		self.assertEqual(len(seen), 1)
+		if before and before[0][1] == "ON":
+			self.assertEqual(seen[0][0][1], "OFF")
+		else:
+			self.assertEqual(seen[0], before)
 
 
 class TestConcurrentNumbering(PeruTestCase):

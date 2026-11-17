@@ -28,7 +28,7 @@ the user's side.
 
 | Proposal item | State |
 |---|---|
-| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v15) jobs pass. A v16 job exists, marked experimental: its first run failed, the causes were fixed, and the fixed version has passed only on the test machine. |
+| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v15) jobs pass. The v16 job (Python 3.14, MariaDB 11.8) passes too. |
 | Step 3 — PCGE 2019 chart, apply / merge, defaults | Built and tested. Account types and defaults await the accountant. |
 | Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
 | Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
@@ -40,7 +40,7 @@ the user's side.
 | Step 4 — destination entries (6 → 9 / 79) | Not started. |
 | Step 5 — e-invoicing (UBL, provider, CDR) | Not started. |
 | Step 6 — print format | Only the amount-in-words function. |
-| Step 7 — tests on v15 and v16, documentation | Tests pass on v15 and, on the test machine, on v16. The v16 screens and desk entry are not done. Feature descriptions in English and Spanish. |
+| Step 7 — tests on v15 and v16, documentation | Tests pass on v15 and v16. The v16 screens and desk entry are not done. Feature descriptions in English and Spanish. |
 | CONCAR toolkit, reconciliation, SIRE | Not started. |
 | Annexure A scenarios with an automated test | CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03, MD-CC-01..04, TX-UC-01..03, TX-CC-01..03 (20 of 81). Test names carry the ID. |
 
@@ -155,12 +155,12 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **259 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+- **263 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
   on two sites, one of them a fresh install, and in CI on GitHub (v15).
-- **Mutation check: 67 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 69 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run as three batches (35, 24, and the 8 for the background job). The combined script
+  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
   was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
@@ -181,10 +181,9 @@ Not shipped, because no official source could be confirmed or reached:
 ### Not verified
 
 - **The screens** (section 9).
-- **ERPNext v16 beyond the automated tests.** The suite passes on a fresh v16 site on the test
-  machine (Frappe 16.56.0, ERPNext 16.55.0, Python 3.14, but MariaDB 10.11 where v16 asks for
-  11.8): 258 tests, 1 skipped. Whether the CI job, which uses MariaDB 11.8, agrees was not known
-  when this was written. Not done for v16: the desk. v16 lists apps through Desktop Icon and
+- **ERPNext v16 beyond the automated tests.** The suite passes on v16 in CI (Python 3.14,
+  MariaDB 11.8) and on the test machine (Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11): 262
+  tests, 1 skipped. Not done for v16: the desk. v16 lists apps through Desktop Icon and
   Workspace Sidebar documents and none is shipped, so the "Peru" entry may not appear; the one
   skipped test is the one for the v15 sidebar. No v16 screen was ever opened.
 - **The background job from the browser.** The job itself was run through a real queue and
@@ -282,8 +281,21 @@ Found while building. Some are settings to change, some are traps.
 
 ### Differences found on v16
 
-The first v16 run failed in 23 test classes. Four causes, all fixed, the first three in code
-that runs in production:
+The first v16 runs failed. Five causes, all fixed; all but the last two are in code that runs
+in production:
+
+- **MariaDB 11.6.2 and later refuse the lock on the voucher counter** when another submission
+  of the same series committed after the transaction's first read (`innodb_snapshot_isolation`
+  is ON by default; error 1020, "Record has changed since last read"). No number was ever
+  duplicated or skipped, but of two overlapping submissions one failed. `allocate_next_number`
+  now switches that check off on its own connection for the two statements that lock and
+  advance the counter, and back on after: the counter is only ever read under the lock, so
+  waiting for the latest value is the correct behaviour, and it is what older servers do. If
+  the database still refuses (or reports a deadlock), the user is told to submit again and
+  nothing is allocated. The three concurrency tests failed on MariaDB 11.8 before this and
+  pass after it. **Review this with whoever runs the database**: the alternative is to set
+  `innodb_snapshot_isolation = OFF` for the whole server and delete the switch. ERPNext's own
+  locking reads are subject to the same check and are not touched by this app.
 
 - **`rebuild_tree` takes one argument on v16.** `apply_pcge` passed the parent field as well
   and stopped after creating the accounts.
@@ -424,8 +436,9 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 
 1. **Click through the screens** on a v15 site, starting with the "Perú" menu. Half a day,
    and it removes the largest unknown.
-2. **Read the v16 job in CI.** The v15 jobs are green. The v16 job is allowed to fail; if it is
-   green, v16 needs only the desk entry and a click-through (section 5, "Not verified").
+2. **Decide on v16.** All CI jobs are green. For v16 the desk entry and a click-through are
+   missing (section 5, "Not verified"), and the counter lock on MariaDB 11.8 deserves a review
+   (section 7, "Differences found on v16").
 3. **Accountant session on section 6.** Decisions 10–15 shape everything that posts.
 4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
 5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
@@ -495,3 +508,4 @@ erpnext_peru/
 | — | `CI: let the MariaDB client connect without TLS` | First green integration run. |
 | 0.2.0 | `Apply the PCGE as a background job; add a v16 CI job` | Job, state and polling; own role check; experimental v16 matrix entry. |
 | 0.2.0 | `Make the app and its tests run on ERPNext v16` | Three v16 incompatibilities and the test-site preparation. |
+| 0.2.0 | `Voucher counter: wait for the row lock on MariaDB 11.6+` | Counter lock under snapshot isolation; "submit again" message; v16 CI job required. |

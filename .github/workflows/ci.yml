@@ -1,8 +1,7 @@
-# The unit job and the version-15 integration job pass.
-# The version-16 entry is experimental: it may fail without turning the run
-# red, so read its log, do not trust the colour of the run. Its first run
-# failed; the causes are fixed and the suite passes on v16 outside CI. Remove
-# "experimental" once it passes here and v16 is meant to be supported.
+# All three jobs pass. The version-16 job is the only one that runs on
+# MariaDB 11.8, whose stricter row locking the voucher counter has to cope
+# with (see docs/HANDOVER.md, "Differences found on v16"). Passing tests on
+# v16 do not make v16 supported: its desk entry is not built.
 name: CI
 
 on:
@@ -50,7 +49,7 @@ jobs:
             python: "3.14"
             node: "24"
             mariadb: "11.8"
-            experimental: true
+            experimental: false
     services:
       mariadb:
         image: mariadb:${{ matrix.mariadb }}

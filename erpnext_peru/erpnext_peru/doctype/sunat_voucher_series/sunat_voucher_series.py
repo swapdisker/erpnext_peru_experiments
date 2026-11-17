@@ -1,12 +1,14 @@
 # Copyright (c) 2026, erpnext_peru contributors
 # License: GNU General Public License v3. See license.txt
 
+from contextlib import contextmanager, suppress
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint
 
-from erpnext_peru.overrides.common import is_peru_company, throw_voucher_error
+from erpnext_peru.overrides.common import SeriesBusyError, is_peru_company, throw_voucher_error
 from erpnext_peru.utils.voucher import (
 	ISSUABLE_TYPES,
 	MAX_NUMBER,
@@ -95,23 +97,48 @@ def get_enabled_series(company: str, comprobante_type: str, letter: str | None =
 	return frappe.get_all("SUNAT Voucher Series", filters=filters, pluck="series", order_by="series asc")
 
 
-def allocate_next_number(
-	company: str, comprobante_type: str, series: str, for_document: str | None = None
-) -> int:
-	"""Lock the series row, advance its counter and return the allocated number.
+# MariaDB error numbers: deadlock, and "record has changed since last read".
+_CONCURRENT_CHANGE_ERRORS = (1213, 1020)
 
-	Must be called inside the transaction that submits the document: the row
-	lock is held until that transaction commits or rolls back, which makes the
-	numbering gapless and free of duplicates under concurrent submissions.
+
+@contextmanager
+def _locking_read_sees_latest():
+	"""Let the lock on the counter row read the latest committed value.
+
+	MariaDB 11.6.2 and later run with ``innodb_snapshot_isolation = ON``: a
+	transaction that locks a row which somebody else changed after its first
+	read is refused (error 1020) instead of waiting and reading the new value.
+	For this counter that refusal protects nothing, because the number is only
+	ever read under the lock, and it would make one of every two overlapping
+	submissions of a series fail. The check is switched off for the statements
+	inside this block, on this connection only, and switched back on after.
+	Older servers do not have the variable and nothing happens.
 	"""
-	name = get_series_name(company, comprobante_type, series)
-	if not name:
-		frappe.throw(
-			_(
-				"Series {0} is not registered for comprobante type {1} and company {2}. Create it in SUNAT Voucher Series."
-			).format(frappe.bold(series), frappe.bold(comprobante_type), frappe.bold(company))
-		)
+	switched = False
+	if frappe.db.db_type == "mariadb":
+		rows = frappe.db.sql("SHOW SESSION VARIABLES LIKE 'innodb_snapshot_isolation'")
+		if rows and str(rows[0][1]).upper() == "ON":
+			frappe.db.sql("SET SESSION innodb_snapshot_isolation = OFF")
+			switched = True
+	try:
+		yield
+	finally:
+		if switched:
+			# If the connection is gone the original error matters, not this one.
+			with suppress(Exception):
+				frappe.db.sql("SET SESSION innodb_snapshot_isolation = ON")
 
+
+def _is_concurrent_change(error: Exception) -> bool:
+	if isinstance(error, frappe.QueryDeadlockError):
+		return True
+	cause = error.args[0] if error.args else None
+	return cause in _CONCURRENT_CHANGE_ERRORS
+
+
+def _advance_counter(
+	name: str, company: str, comprobante_type: str, series: str, for_document: str | None
+) -> int:
 	row = frappe.db.get_value(
 		"SUNAT Voucher Series", name, ["current_number", "enabled"], as_dict=True, for_update=True
 	)
@@ -143,4 +170,37 @@ def allocate_next_number(
 		)
 
 	frappe.db.set_value("SUNAT Voucher Series", name, "current_number", number)
+	return number
+
+
+def allocate_next_number(
+	company: str, comprobante_type: str, series: str, for_document: str | None = None
+) -> int:
+	"""Lock the series row, advance its counter and return the allocated number.
+
+	Must be called inside the transaction that submits the document: the row
+	lock is held until that transaction commits or rolls back, which makes the
+	numbering gapless and free of duplicates under concurrent submissions.
+	"""
+	name = get_series_name(company, comprobante_type, series)
+	if not name:
+		frappe.throw(
+			_(
+				"Series {0} is not registered for comprobante type {1} and company {2}. Create it in SUNAT Voucher Series."
+			).format(frappe.bold(series), frappe.bold(comprobante_type), frappe.bold(company))
+		)
+
+	with _locking_read_sees_latest():
+		try:
+			number = _advance_counter(name, company, comprobante_type, series, for_document)
+		except Exception as error:
+			if not _is_concurrent_change(error):
+				raise
+			# Nothing was allocated; the database refused before the counter moved.
+			frappe.throw(
+				_(
+					"Another voucher of series {0} was being issued at the same moment. This document was not submitted: submit it again."
+				).format(frappe.bold(series)),
+				exc=SeriesBusyError,
+			)
 	return number

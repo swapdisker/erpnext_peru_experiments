@@ -368,6 +368,20 @@ M = [
 		"test_pcge_job",
 	),
 	("accounts/api.py", "\t\tdeduplicate=True,", "\t\tdeduplicate=False,", "b", "test_pcge_job"),
+	(
+		"erpnext_peru/doctype/sunat_voucher_series/sunat_voucher_series.py",
+		"_CONCURRENT_CHANGE_ERRORS = (1213, 1020)",
+		"_CONCURRENT_CHANGE_ERRORS = (1213,)",
+		"b",
+		"test_voucher_series",
+	),
+	(
+		"erpnext_peru/doctype/sunat_voucher_series/sunat_voucher_series.py",
+		"\t\t\tif not _is_concurrent_change(error):",
+		"\t\t\tif False:",
+		"b",
+		"test_voucher_series",
+	),
 ]
 
 

@@ -31,6 +31,10 @@ class DuplicateVoucherError(PeruValidationError):
 	pass
 
 
+class SeriesBusyError(PeruValidationError):
+	"""Two documents asked for a number of the same series at the same moment."""
+
+
 def is_peru_company(company: str | None) -> bool:
 	"""True when the company exists and its country is Peru."""
 	if not company:
