@@ -1,7 +1,8 @@
 # The unit job and the version-15 integration job pass.
-# The version-16 entry is experimental: the app was never run on v16, so the
-# entry may fail without turning the run red. Read its log, do not trust its
-# colour. Remove "experimental" once it passes and v16 is meant to be supported.
+# The version-16 entry is experimental: it may fail without turning the run
+# red, so read its log, do not trust the colour of the run. Its first run
+# failed; the causes are fixed and the suite passes on v16 outside CI. Remove
+# "experimental" once it passes here and v16 is meant to be supported.
 name: CI
 
 on:

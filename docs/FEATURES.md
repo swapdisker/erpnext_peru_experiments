@@ -314,4 +314,4 @@ define. See [HANDOVER.md](HANDOVER.md), section 7.
 - Destination entries (6 → 9 / 79).
 - The daily SUNAT exchange rate.
 - The Ubigeo district list, and the wider list of document types for purchases.
-- ERPNext v16.
+- ERPNext v16: the automated tests pass, but the desk entry is not built and no screen was checked.

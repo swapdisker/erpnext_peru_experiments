@@ -28,7 +28,7 @@ the user's side.
 
 | Proposal item | State |
 |---|---|
-| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v15) jobs pass. A v16 job exists, marked experimental; its result is unknown. |
+| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v15) jobs pass. A v16 job exists, marked experimental: its first run failed, the causes were fixed, and the fixed version has passed only on the test machine. |
 | Step 3 — PCGE 2019 chart, apply / merge, defaults | Built and tested. Account types and defaults await the accountant. |
 | Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
 | Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
@@ -40,7 +40,7 @@ the user's side.
 | Step 4 — destination entries (6 → 9 / 79) | Not started. |
 | Step 5 — e-invoicing (UBL, provider, CDR) | Not started. |
 | Step 6 — print format | Only the amount-in-words function. |
-| Step 7 — tests on v15 and v16, documentation | v15 only. Feature descriptions in English and Spanish. |
+| Step 7 — tests on v15 and v16, documentation | Tests pass on v15 and, on the test machine, on v16. The v16 screens and desk entry are not done. Feature descriptions in English and Spanish. |
 | CONCAR toolkit, reconciliation, SIRE | Not started. |
 | Annexure A scenarios with an automated test | CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03, MD-CC-01..04, TX-UC-01..03, TX-CC-01..03 (20 of 81). Test names carry the ID. |
 
@@ -181,9 +181,12 @@ Not shipped, because no official source could be confirmed or reached:
 ### Not verified
 
 - **The screens** (section 9).
-- **ERPNext v16.** It needs Python 3.14, Node 24 and MariaDB 11.8, which the test machine did
-  not have. CI has a v16 job, marked experimental so that it cannot turn the run red. It had
-  not run when this was written: read its log before believing anything about v16.
+- **ERPNext v16 beyond the automated tests.** The suite passes on a fresh v16 site on the test
+  machine (Frappe 16.56.0, ERPNext 16.55.0, Python 3.14, but MariaDB 10.11 where v16 asks for
+  11.8): 258 tests, 1 skipped. Whether the CI job, which uses MariaDB 11.8, agrees was not known
+  when this was written. Not done for v16: the desk. v16 lists apps through Desktop Icon and
+  Workspace Sidebar documents and none is shipped, so the "Peru" entry may not appear; the one
+  skipped test is the one for the v15 sidebar. No v16 screen was ever opened.
 - **The background job from the browser.** The job itself was run through a real queue and
   worker (below). The dialog that waits for it is JavaScript and has only been syntax-checked.
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
@@ -276,6 +279,21 @@ Found while building. Some are settings to change, some are traps.
 13. **List filters prefill new records.** Filtering the Customer list by identity type and
     then pressing "Add" creates a customer with that type already set.
 14. **`frappe.copy_doc` keeps the docstatus when tests are running.** Only relevant to tests.
+
+### Differences found on v16
+
+The first v16 run failed in 23 test classes. Four causes, all fixed, the first three in code
+that runs in production:
+
+- **`rebuild_tree` takes one argument on v16.** `apply_pcge` passed the parent field as well
+  and stopped after creating the accounts.
+- **A filter `("not in", ("", None))` matches nothing on v16.** The lookup of the accounts a
+  company already has returned an empty list, so every account looked missing. It is now
+  `("is", "set")`, which means the same on both versions. Avoid `None` inside `in` / `not in`.
+- **`frappe.desk.desktop.get_workspace_sidebar_items` is gone**, with the v15 sidebar.
+- **`erpnext.setup.utils.before_tests` is gone.** A fresh v16 test site was never taken through
+  the setup wizard, and creating a company failed ("Could not find Warehouse Type: Transit").
+  The app's own `tests/utils.py: prepare_site` now does it on both versions.
 
 ## 8. Known gaps and risks
 
@@ -406,8 +424,8 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 
 1. **Click through the screens** on a v15 site, starting with the "Perú" menu. Half a day,
    and it removes the largest unknown.
-2. **Read the v16 job in CI.** The v15 jobs are green. The v16 job is allowed to fail; decide
-   from its log whether v16 is in scope and what it takes.
+2. **Read the v16 job in CI.** The v15 jobs are green. The v16 job is allowed to fail; if it is
+   green, v16 needs only the desk entry and a click-through (section 5, "Not verified").
 3. **Accountant session on section 6.** Decisions 10–15 shape everything that posts.
 4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
 5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
@@ -476,3 +494,4 @@ erpnext_peru/
 | 0.2.0 | `Add a Peru workspace to the sidebar` | Sidebar entry with shortcuts and cards. |
 | — | `CI: let the MariaDB client connect without TLS` | First green integration run. |
 | 0.2.0 | `Apply the PCGE as a background job; add a v16 CI job` | Job, state and polling; own role check; experimental v16 matrix entry. |
+| 0.2.0 | `Make the app and its tests run on ERPNext v16` | Three v16 incompatibilities and the test-site preparation. |

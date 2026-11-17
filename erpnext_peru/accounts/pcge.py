@@ -75,7 +75,9 @@ def _existing_accounts(company: str) -> dict[str, frappe._dict]:
 	"""Company accounts that carry an account number, keyed by that number."""
 	rows = frappe.get_all(
 		"Account",
-		filters={"company": company, "account_number": ("not in", ("", None))},
+		# "is set", not ("not in", ("", None)): Frappe v16 turns the latter into SQL
+		# that matches nothing, and every account would look missing.
+		filters={"company": company, "account_number": ("is", "set")},
 		fields=["name", "account_name", "account_number", "is_group", "root_type", "parent_account"],
 	)
 	return {row.account_number.strip(): row for row in rows}
@@ -240,7 +242,7 @@ def apply_pcge(company: str, replace_existing: bool = False, dry_run: bool = Fal
 		frappe.local.flags.ignore_update_nsm = previous_nsm_flag
 
 	if not dry_run and (report.created or report.converted_to_group):
-		rebuild_tree("Account", "parent_account")
+		rebuild_tree("Account")  # one argument: Frappe v16 no longer accepts the parent field
 
 	_set_company_defaults(company, existing, report, dry_run)
 	return report
@@ -416,7 +418,7 @@ def import_client_accounts(
 		frappe.local.flags.ignore_update_nsm = previous_nsm_flag
 
 	if not dry_run and (report.created or report.converted_to_group or report.renamed):
-		rebuild_tree("Account", "parent_account")
+		rebuild_tree("Account")  # one argument: Frappe v16 no longer accepts the parent field
 	return report
 
 

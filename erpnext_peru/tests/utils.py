@@ -61,9 +61,54 @@ class PeruTestCase(FrappeTestCase):
 		frappe.db.rollback()
 
 
+def prepare_site():
+	"""Bring a fresh site to the state the fixtures below need: setup wizard done.
+
+	This is the app's ``before_tests`` hook. ``ensure_fixtures`` calls it as well,
+	because Frappe v16 does not run that hook for every kind of test class.
+	ERPNext v15 has a function for this; v16 dropped it, so there the wizard is
+	run here with the same answers.
+	"""
+	if frappe.db.exists("Warehouse Type", "Transit"):  # created by the wizard
+		return
+	try:
+		from erpnext.setup.utils import before_tests as erpnext_before_tests
+	except ImportError:
+		erpnext_before_tests = None
+
+	if erpnext_before_tests:
+		erpnext_before_tests()
+	else:
+		from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
+
+		year = frappe.utils.now_datetime().year
+		setup_complete(
+			{
+				"currency": "USD",
+				"full_name": "Test User",
+				"company_name": "Wind Power LLC",
+				"timezone": "America/New_York",
+				"company_abbr": "WP",
+				"industry": "Manufacturing",
+				"country": "United States",
+				"fy_start_date": f"{year}-01-01",
+				"fy_end_date": f"{year}-12-31",
+				"language": "english",
+				"company_tagline": "Testing",
+				"email": "test@erpnext.com",
+				"password": "test",
+				"chart_of_accounts": "Standard",
+			}
+		)
+		frappe.db.commit()
+	if not frappe.db.exists("Warehouse Type", "Transit"):
+		raise RuntimeError("The ERPNext setup wizard did not complete; the test site is not usable.")
+
+
 def ensure_fixtures():
 	frappe.set_user("Administrator")
 	frappe.flags.mute_emails = True
+	prepare_site()
 
 	for currency in ("PEN", "USD"):
 		if not frappe.db.get_value("Currency", currency, "enabled"):
@@ -139,7 +184,7 @@ def pcge_account(code: str, company: str = PCGE_COMPANY) -> str:
 def _ensure_tree(doctype, name, name_field, parent_field):
 	if frappe.db.exists(doctype, name):
 		return
-	root = frappe.db.get_value(doctype, {"is_group": 1, parent_field: ("in", ("", None))}, "name")
+	root = frappe.db.get_value(doctype, {"is_group": 1, parent_field: ("is", "not set")}, "name")
 	if not root:
 		root_doc = frappe.get_doc(
 			{"doctype": doctype, name_field: f"_Test Peru Root {doctype}", "is_group": 1}

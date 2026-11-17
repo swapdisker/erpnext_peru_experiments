@@ -327,4 +327,4 @@ que la configuración del PCGE no define. Vea [HANDOVER.md](HANDOVER.md), secci�
 - Asientos de destino (6 → 9 / 79).
 - Tipo de cambio diario de SUNAT.
 - La lista de distritos de Ubigeo y la lista ampliada de tipos de documento para compras.
-- ERPNext v16.
+- ERPNext v16: las pruebas automáticas pasan, pero falta la entrada en el escritorio y no se revisó ninguna pantalla.
