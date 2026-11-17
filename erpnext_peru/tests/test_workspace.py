@@ -1,8 +1,9 @@
 # Copyright (c) 2026, erpnext_peru contributors
 # License: GNU General Public License v3. See license.txt
-"""The "Peru" entry in the sidebar."""
+"""The "Peru" entry in the sidebar and on the apps screen."""
 
 import json
+import os
 
 import frappe
 
@@ -24,9 +25,9 @@ class TestWorkspace(PeruTestCase):
 		try:
 			from frappe.desk.desktop import get_workspace_sidebar_items
 		except ImportError:
-			# Frappe v16 replaced the workspace sidebar by Desktop Icon and Workspace
-			# Sidebar documents. Nothing was built for them (docs/HANDOVER.md, v16).
-			self.skipTest("Frappe v16 desk: no Desktop Icon or Workspace Sidebar is shipped for Peru")
+			# Frappe v16 has no such sidebar: it builds one per module by itself, and
+			# the workspace is reached from the apps screen (test below) or /desk/peru.
+			self.skipTest("Frappe v16: the sidebar is computed per module")
 
 		pages = get_workspace_sidebar_items()["pages"]
 		self.assertIn("Peru", [page["name"] for page in pages])
@@ -68,3 +69,37 @@ class TestWorkspace(PeruTestCase):
 					expected, count = row.link_count, 0
 			else:
 				count += 1
+
+
+class TestAppsScreen(PeruTestCase):
+	def peru_apps(self):
+		from frappe.apps import get_apps
+
+		return [app for app in get_apps() if app["name"] == "erpnext_peru"]
+
+	def test_icon_on_the_apps_screen(self):
+		[app] = self.peru_apps()
+		self.assertEqual(app["route"], "/app/peru")
+		self.assertEqual(app["title"], frappe._("Peru"))
+		logo = app["logo"]
+		self.assertTrue(logo.startswith("/assets/erpnext_peru/"))
+		path = frappe.get_app_path("erpnext_peru", "public", logo.removeprefix("/assets/erpnext_peru/"))
+		self.assertTrue(os.path.isfile(path), path)
+
+	def test_website_users_do_not_see_it(self):
+		from erpnext_peru.setup.apps_screen import has_app_permission
+
+		self.assertTrue(has_app_permission())  # Administrator
+		email = "_test_pe_website_user@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": email,
+					"first_name": "Web",
+					"user_type": "Website User",
+					"send_welcome_email": 0,
+				}
+			).insert()
+		frappe.set_user(email)
+		self.assertFalse(has_app_permission())

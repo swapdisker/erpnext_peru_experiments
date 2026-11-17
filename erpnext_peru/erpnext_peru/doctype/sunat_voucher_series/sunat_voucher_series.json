@@ -41,7 +41,7 @@
    "fieldname": "series",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Series",
+   "label": "Voucher Series",
    "length": 4,
    "reqd": 1,
    "set_only_once": 1
@@ -68,7 +68,7 @@
   }
  ],
  "links": [],
- "modified": "2026-11-15 00:00:00.000000",
+ "modified": "2026-11-17 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ERPNext Peru",
  "name": "SUNAT Voucher Series",

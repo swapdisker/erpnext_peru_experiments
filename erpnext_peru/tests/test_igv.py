@@ -248,6 +248,19 @@ class TestIgvSetup(IgvCase):
 		frappe.db.set_single_value("System Settings", "rounding_method", "Commercial Rounding")
 		self.assertEqual(setup_igv(PCGE_COMPANY).warnings, [])
 
+	def test_chart_cannot_be_replaced_once_igv_is_set_up(self):
+		"""ERPNext would refuse half way; the preview says so before anything is tried."""
+		from erpnext_peru.accounts.pcge import PcgeApplyError, apply_pcge
+
+		setup_igv(PCGE_COMPANY)
+		frappe.db.delete("GL Entry", {"company": PCGE_COMPANY})  # replacing needs no ledger entries
+		for dry_run in (True, False):
+			with self.subTest(dry_run=dry_run), self.assertRaises(PcgeApplyError) as raised:
+				apply_pcge(PCGE_COMPANY, replace_existing=True, dry_run=dry_run)
+			self.assertIn("IGV is already set up", str(raised.exception))
+		self.assertTrue(frappe.db.exists("Tax Rule", {"company": PCGE_COMPANY}))
+		self.assertEqual(apply_pcge(PCGE_COMPANY, dry_run=True).created, [])  # adding stays possible
+
 	def test_tax_category_selects_the_template(self):
 		"""What the form asks the server when the user picks a tax category."""
 		expected = {

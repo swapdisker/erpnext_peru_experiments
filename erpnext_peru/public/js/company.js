@@ -24,6 +24,11 @@ erpnext_peru.list_html = function (rows, render) {
 	return `<ul>${shown.join("")}</ul>`;
 };
 
+// Company default fields by their label, as the user sees them on the form.
+erpnext_peru.company_field_labels = function (fieldnames) {
+	return fieldnames.map((fieldname) => __(frappe.meta.get_label("Company", fieldname), null, "Company"));
+};
+
 erpnext_peru.pcge_report_html = function (report) {
 	const esc = frappe.utils.escape_html;
 	let html = "<p>";
@@ -54,12 +59,12 @@ erpnext_peru.pcge_report_html = function (report) {
 	}
 	if (report.defaults_provisional && report.defaults_provisional.length) {
 		html += `<p>${__("Company defaults set provisionally, to be confirmed by the accountant:")} ${esc(
-			report.defaults_provisional.join(", ")
+			erpnext_peru.company_field_labels(report.defaults_provisional).join(", ")
 		)}</p>`;
 	}
 	if (report.defaults_left_empty && report.defaults_left_empty.length) {
 		html += `<p>${__("Company defaults left for the accountant to choose:")} ${esc(
-			report.defaults_left_empty.join(", ")
+			erpnext_peru.company_field_labels(report.defaults_left_empty).join(", ")
 		)}</p>`;
 	}
 	return html;

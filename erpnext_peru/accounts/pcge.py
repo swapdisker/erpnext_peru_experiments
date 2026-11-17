@@ -270,6 +270,14 @@ def _apply_pcge(company: str, replace_existing: bool, dry_run: bool) -> dict:
 				).format(frappe.bold(company)),
 				exc=PcgeApplyError,
 			)
+		if frappe.db.exists("Tax Rule", {"company": company}):
+			# ERPNext would refuse half way, when deleting the tax templates the rules use.
+			frappe.throw(
+				_(
+					"The chart of accounts of {0} cannot be replaced because IGV is already set up: its tax rules and templates use the current accounts. Apply the PCGE without replacing, or delete the tax rules and tax templates of the company first and set up IGV again afterwards."
+				).format(frappe.bold(company)),
+				exc=PcgeApplyError,
+			)
 		report.replaced_existing = True
 		if not dry_run:
 			_remove_existing_chart(company)

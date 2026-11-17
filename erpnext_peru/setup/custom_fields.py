@@ -86,13 +86,16 @@ CUSTOM_FIELDS = {
 		},
 		{
 			"fieldname": "pe_series",
-			"label": "Series",
+			# Not "Series": ERPNext's naming series on the same form is translated
+			# "Secuencia" too, and two fields would carry the same label.
+			"label": "Voucher Series",
 			"fieldtype": "Data",
 			"length": 4,
 			"insert_after": "pe_comprobante_type",
 			"no_copy": 1,
 			"print_hide": 1,
 			"translatable": 0,
+			"description": "The number is assigned automatically when the invoice is submitted.",
 		},
 		{
 			"fieldname": "pe_number",
@@ -102,7 +105,8 @@ CUSTOM_FIELDS = {
 			"read_only": 1,
 			"no_copy": 1,
 			"print_hide": 1,
-			"description": "Assigned automatically when the invoice is submitted.",
+			# A draft holds 0, which reads like a real number.
+			"depends_on": "eval:doc.pe_number",
 		},
 		{
 			"fieldname": "pe_voucher_number",
@@ -201,7 +205,9 @@ CUSTOM_FIELDS = {
 		},
 		{
 			"fieldname": "pe_series",
-			"label": "Series",
+			# Not "Series": ERPNext's naming series on the same form is translated
+			# "Secuencia" too, and two fields would carry the same label.
+			"label": "Voucher Series",
 			"fieldtype": "Data",
 			"length": 20,
 			"insert_after": "pe_comprobante_type",
