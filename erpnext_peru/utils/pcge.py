@@ -19,6 +19,8 @@ import csv
 import os
 from dataclasses import dataclass
 
+from erpnext_peru.utils.errors import CodedError
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 CATALOGUE_FILE = os.path.join(DATA_DIR, "pcge_2019.csv")
 
@@ -67,11 +69,8 @@ MIN_CODE_LENGTH = 2
 MAX_CODE_LENGTH = 10
 
 
-class PcgeError(ValueError):
-	def __init__(self, code: str, message: str, **params):
-		super().__init__(message)
-		self.code = code
-		self.params = params
+class PcgeError(CodedError):
+	"""Raised when a catalogue or a client account code is not valid."""
 
 
 @dataclass(frozen=True)

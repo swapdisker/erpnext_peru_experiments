@@ -102,6 +102,34 @@ class TestPcgeJob(PeruTestCase):
 			)
 		)
 
+	def test_job_cut_short_by_a_deadlock_changes_nothing(self):
+		"""MariaDB then rolls back the whole transaction and forgets the savepoint."""
+		before = frappe.db.count("Account", {"company": PCGE_COMPANY})
+
+		def deadlock(company, replace_existing=False, dry_run=False):
+			frappe.delete_doc("Account", pcge_account("1675"))
+			frappe.db.sql(f"RELEASE SAVEPOINT {api.JOB_SAVEPOINT}")  # as the server would
+			raise frappe.QueryDeadlockError("Deadlock found when trying to get lock")
+
+		with patch.object(api, "apply_pcge", deadlock):
+			api.run_pcge_job(PCGE_COMPANY)
+
+		state = api.pcge_job_status(PCGE_COMPANY)
+		self.assertEqual(state["status"], "failed")
+		self.assertIn("Deadlock", state["error"])
+		self.assertEqual(frappe.db.count("Account", {"company": PCGE_COMPANY}), before)
+
+	def test_state_is_failed_even_when_undoing_fails(self):
+		def broken(company, replace_existing=False, dry_run=False):
+			raise frappe.ValidationError("first problem")
+
+		with patch.object(api, "apply_pcge", broken):
+			with patch.object(api, "_undo_job", side_effect=ConnectionError("lost")):
+				with self.assertRaises(ConnectionError):
+					api.run_pcge_job(PCGE_COMPANY)
+		state = api.pcge_job_status(PCGE_COMPANY)
+		self.assertEqual((state["status"], state["error"]), ("failed", "first problem"))
+
 	def test_second_request_while_one_is_in_progress_is_refused(self):
 		for status in ("queued", "running"):
 			api._set_state(PCGE_COMPANY, status=status, started=time.time())

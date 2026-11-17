@@ -107,11 +107,28 @@ class TestPartyIdentity(PeruTestCase):
 		self.assertEqual(customer.tax_id, "FREE-TEXT-1")
 
 	def test_unknown_or_disabled_document_type(self):
-		with self.assertRaises(frappe.ValidationError):
+		with self.assertRaises(frappe.LinkValidationError):  # Frappe's own link check comes first
 			make_customer("_Test PE Unknown Type", "Z", "123")
 		frappe.db.set_value("SUNAT Identity Document Type", "G", "enabled", 0)
-		with self.assertRaises(frappe.ValidationError):
+		with self.assertRaises(IdentityDocumentError):
 			make_customer("_Test PE Disabled Type", "G", "123")
+
+	def test_removing_the_document_removes_the_tax_id_it_set(self):
+		ruc = make_ruc(10000020)
+		customer = make_customer("_Test PE Remove Doc", "6", ruc)
+		self.assertEqual(customer.tax_id, ruc)
+		customer.pe_identity_type = None
+		customer.pe_identity_number = None
+		customer.save()
+		self.assertIsNone(customer.tax_id)
+
+	def test_a_tax_id_entered_separately_is_kept(self):
+		customer = make_customer("_Test PE Keep Tax ID", "1", "10000021")
+		customer.pe_identity_type = None
+		customer.pe_identity_number = None
+		customer.tax_id = "OTHER-123"
+		customer.save()
+		self.assertEqual(customer.tax_id, "OTHER-123")
 
 	def test_number_is_normalized(self):
 		ruc = make_ruc(10000010)

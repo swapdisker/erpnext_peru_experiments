@@ -33,6 +33,7 @@ def validate(doc, method=None):
 	if not identity_type and not number:
 		doc.pe_identity_type = None
 		doc.pe_identity_number = None
+		_clear_tax_id_copied_from_identity(doc)
 		return
 	if not identity_type:
 		frappe.throw(
@@ -42,7 +43,9 @@ def validate(doc, method=None):
 	if not number:
 		frappe.throw(_("Enter the identity document number."), exc=IdentityDocumentError)
 
-	check_catalogue_entry(IDENTITY_TYPE_DOCTYPE, identity_type, _("Identity Document Type"))
+	check_catalogue_entry(
+		IDENTITY_TYPE_DOCTYPE, identity_type, _("Identity Document Type"), exc=IdentityDocumentError
+	)
 	try:
 		number = validate_identity_number(identity_type, number)
 	except IdentityError as error:
@@ -53,6 +56,18 @@ def validate(doc, method=None):
 	_check_duplicate(doc)
 	# ERPNext prints and reports the party's Tax ID; keep it in step.
 	doc.tax_id = number
+
+
+def _clear_tax_id_copied_from_identity(doc):
+	"""Removing the identity document also removes the Tax ID this hook copied from it.
+
+	A Tax ID that differs from the old document number was entered separately
+	and is kept.
+	"""
+	before = doc.get_doc_before_save() if not doc.is_new() else None
+	old_number = before and before.get("pe_identity_number")
+	if old_number and doc.get("tax_id") == old_number:
+		doc.tax_id = None
 
 
 def _check_duplicate(doc):

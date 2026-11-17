@@ -8,7 +8,10 @@ from erpnext_peru.overrides.common import PERU
 
 
 def validate(doc, method=None):
-	"""Fill district / province / department from the Ubigeo; warn when it is missing."""
+	"""Fill district / province / department from the Ubigeo; warn when it is missing.
+
+	The warning appears only once the Ubigeo list has been loaded.
+	"""
 	ubigeo = doc.get("pe_ubigeo")
 	if ubigeo:
 		row = frappe.db.get_value("Ubigeo", ubigeo, ["district", "province", "department"], as_dict=True)
@@ -21,7 +24,9 @@ def validate(doc, method=None):
 			if not doc.state:
 				doc.state = row.department
 		return
-	if doc.country == PERU:
+	# Until the Ubigeo list is loaded nobody can fill the field: a warning on
+	# every save would only teach users to ignore warnings.
+	if doc.country == PERU and frappe.db.exists("Ubigeo", {}):
 		frappe.msgprint(
 			_("This address has no Ubigeo. The Ubigeo is mandatory for electronic invoicing."),
 			indicator="orange",

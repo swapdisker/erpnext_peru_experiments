@@ -9,6 +9,7 @@ from erpnext_peru.utils.identity import IdentityError
 from erpnext_peru.utils.voucher import VoucherError
 
 PERU = "Peru"
+COMPROBANTE_TYPE_DOCTYPE = "SUNAT Comprobante Type"
 
 
 class PeruValidationError(frappe.ValidationError):
@@ -40,6 +41,11 @@ def is_peru_company(company: str | None) -> bool:
 	if not company:
 		return False
 	return frappe.get_cached_value("Company", company, "country") == PERU
+
+
+def is_peru_invoice(doc) -> bool:
+	"""Sales or purchase document of a Peruvian company that is not an opening entry."""
+	return is_peru_company(doc.company) and doc.get("is_opening") != "Yes"
 
 
 def identity_error_message(error: IdentityError) -> str:
@@ -109,18 +115,18 @@ def throw_voucher_error(error: VoucherError):
 	frappe.throw(voucher_error_message(error), exc=ComprobanteError, title=_("Invalid Comprobante"))
 
 
-def check_catalogue_entry(doctype: str, code: str | None, label: str):
-	"""Throw unless ``code`` exists in the catalogue ``doctype`` and is enabled."""
+def check_catalogue_entry(doctype: str, code: str | None, label: str, exc=ComprobanteError):
+	"""Throw ``exc`` unless ``code`` exists in the catalogue ``doctype`` and is enabled."""
 	if not code:
 		return
 	enabled = frappe.db.get_value(doctype, code, "enabled")
 	if enabled is None:
 		frappe.throw(
 			_("{0}: code {1} does not exist in {2}.").format(label, frappe.bold(code), _(doctype)),
-			exc=ComprobanteError,
+			exc=exc,
 		)
 	if not int(enabled):
 		frappe.throw(
 			_("{0}: code {1} is disabled in {2}.").format(label, frappe.bold(code), _(doctype)),
-			exc=ComprobanteError,
+			exc=exc,
 		)

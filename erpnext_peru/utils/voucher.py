@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import re
 
+from erpnext_peru.utils.errors import CodedError
+
 TYPE_FACTURA = "01"
 TYPE_BOLETA = "03"
 TYPE_CREDIT_NOTE = "07"
@@ -46,13 +48,8 @@ _GENERIC_NUMBER_RE = re.compile(r"^[A-Z0-9-]{1,20}$")
 _VOUCHER_RE = re.compile(r"^([A-Z0-9]{4})-(\d{1,8})$")
 
 
-class VoucherError(ValueError):
-	"""Raised when a series or number is not valid. See ``code`` / ``params``."""
-
-	def __init__(self, code: str, message: str, **params):
-		super().__init__(message)
-		self.code = code
-		self.params = params
+class VoucherError(CodedError):
+	"""Raised when a series or number is not valid."""
 
 
 def normalize_series(series) -> str:

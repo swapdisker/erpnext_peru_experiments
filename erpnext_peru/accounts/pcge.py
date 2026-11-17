@@ -16,6 +16,7 @@ Both accept ``dry_run=True`` and return a report of what was or would be done.
 """
 
 import unicodedata
+from contextlib import contextmanager
 
 import frappe
 from frappe import _
@@ -63,6 +64,43 @@ DEFAULTS_LEFT_TO_THE_ACCOUNTANT = (
 
 class PcgeApplyError(PeruValidationError):
 	pass
+
+
+# One change to a chart of accounts at a time on a site. Creating accounts ends
+# with rebuilding the account tree of every company (as ERPNext does), and two
+# rebuilds at the same moment can deadlock or, on MariaDB before 11.6, leave
+# the tree's internal numbering inconsistent.
+CHART_LOCK = "erpnext_peru_chart"
+CHART_LOCK_WAIT = 120  # seconds
+
+
+@contextmanager
+def chart_lock():
+	"""Hold a database-wide named lock for this site while a chart is changed.
+
+	MariaDB's GET_LOCK works across processes and servers that share the
+	database, and is released if the connection dies. Users creating single
+	accounts by hand do not take it; ERPNext locks those itself.
+
+	If nothing has been written in the current transaction yet, it is
+	committed after the lock is taken: reads then start from a fresh snapshot
+	and see what the previous holder of the lock committed.
+	"""
+	if frappe.db.db_type != "mariadb":  # pragma: no cover - the app targets MariaDB
+		yield
+		return
+	name = f"{frappe.conf.db_name}:{CHART_LOCK}"
+	if frappe.db.sql("SELECT GET_LOCK(%s, %s)", (name, CHART_LOCK_WAIT))[0][0] != 1:
+		frappe.throw(
+			_("Another chart of accounts is being changed on this site. Try again in a few minutes."),
+			exc=PcgeApplyError,
+		)
+	try:
+		if not frappe.db.transaction_writes:
+			frappe.db.commit()  # nosemgrep: nothing written yet; only renews the snapshot
+		yield
+	finally:
+		frappe.db.sql("SELECT RELEASE_LOCK(%s)", (name,))
 
 
 def _normalize(text: str) -> str:
@@ -213,6 +251,13 @@ def apply_pcge(company: str, replace_existing: bool = False, dry_run: bool = Fal
 	``defaults_set``, ``defaults_provisional``, ``defaults_kept`` and
 	``defaults_left_empty``.
 	"""
+	if dry_run:
+		return _apply_pcge(company, replace_existing, dry_run=True)
+	with chart_lock():
+		return _apply_pcge(company, replace_existing, dry_run=False)
+
+
+def _apply_pcge(company: str, replace_existing: bool, dry_run: bool) -> dict:
 	_check_company(company)
 	catalogue = load_catalogue()
 	report = _new_report(company, dry_run, replaced_existing=False, total_in_catalogue=len(catalogue))
@@ -359,6 +404,13 @@ def import_client_accounts(
 	unless ``prefer_client_names`` is set, in which case the account takes the
 	company's name; either way the difference is listed in the report.
 	"""
+	if dry_run:
+		return _import_client_accounts(company, rows, prefer_client_names, dry_run=True)
+	with chart_lock():
+		return _import_client_accounts(company, rows, prefer_client_names, dry_run=False)
+
+
+def _import_client_accounts(company: str, rows: list[dict], prefer_client_names: bool, dry_run: bool) -> dict:
 	_check_company(company)
 	existing = _existing_accounts(company)
 	missing_roots = [digit for digit in sorted(ELEMENTS) if digit not in existing]

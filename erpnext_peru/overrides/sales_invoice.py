@@ -12,8 +12,9 @@ Summary
 Numbers are never typed by users and never reused: a cancelled voucher keeps
 its number and an amended invoice receives a new one.
 
-Invoices of companies whose country is not Peru, and opening invoices
-(``is_opening = "Yes"``), are left untouched.
+Invoices of companies whose country is not Peru, opening invoices
+(``is_opening = "Yes"``) and the invoices ERPNext merges from POS Invoices when
+a point-of-sale shift is closed are left untouched (see ``is_merged_pos_invoice``).
 """
 
 import frappe
@@ -25,9 +26,10 @@ from erpnext_peru.erpnext_peru.doctype.sunat_voucher_series.sunat_voucher_series
 	get_enabled_series,
 )
 from erpnext_peru.overrides.common import (
+	COMPROBANTE_TYPE_DOCTYPE,
 	ComprobanteError,
 	check_catalogue_entry,
-	is_peru_company,
+	is_peru_invoice,
 	throw_identity_error,
 	throw_voucher_error,
 )
@@ -53,13 +55,36 @@ from erpnext_peru.utils.voucher import (
 # total of a Boleta de venta EXCEEDS seven hundred soles.
 BOLETA_ID_THRESHOLD = 700.0
 
-COMPROBANTE_TYPE_DOCTYPE = "SUNAT Comprobante Type"
 CREDIT_REASON_DOCTYPE = "SUNAT Credit Note Reason"
 DEBIT_REASON_DOCTYPE = "SUNAT Debit Note Reason"
 
 
 def applies_to(doc) -> bool:
-	return is_peru_company(doc.company) and doc.get("is_opening") != "Yes"
+	return is_peru_invoice(doc) and not is_merged_pos_invoice(doc)
+
+
+def is_merged_pos_invoice(doc) -> bool:
+	"""True for an invoice ERPNext built by merging submitted POS Invoices.
+
+	Closing a POS shift merges the shift's sales into one Sales Invoice per
+	customer (often the generic walk-in customer) and the returns into credit
+	notes without a reason. That document is not a comprobante: every sale at
+	the counter needs its own, which this app does not issue yet. Applying the
+	rules to it would only make the shift impossible to close.
+
+	``is_consolidated`` alone is not trusted, because an API client can set it:
+	every item must also come from a submitted POS Invoice.
+	"""
+	if not cint(doc.get("is_consolidated")):
+		return False
+	pos_invoices = {row.get("pos_invoice") for row in doc.get("items") or []}
+	if not pos_invoices:
+		return False
+	# An item without a POS Invoice (None) never appears among the submitted ones.
+	submitted = frappe.get_all(
+		"POS Invoice", filters={"name": ("in", list(pos_invoices)), "docstatus": 1}, pluck="name"
+	)
+	return set(submitted) == pos_invoices
 
 
 def _is_submitted_in_database(doc) -> bool:
@@ -330,8 +355,9 @@ def _validate_customer_identity(doc):
 				exc=ComprobanteError,
 				title=_("Factura Requires RUC"),
 			)
-	elif comprobante_type == TYPE_BOLETA:
-		total = flt(doc.base_grand_total, 2)
+	elif governing_type == TYPE_BOLETA:
+		# Notes have negative totals when they reduce the sale: the amount counts.
+		total = abs(flt(doc.base_grand_total, 2))
 		if total > BOLETA_ID_THRESHOLD and not (identity_type and identity_number):
 			frappe.throw(
 				_(

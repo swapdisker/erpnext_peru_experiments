@@ -28,6 +28,9 @@ choices that still need an accountant.
 - The invoice rules apply only to companies whose **country is Peru**. Companies of other
   countries on the same site are left untouched.
 - **Opening invoices** ("Is Opening Entry" = Yes) are exempt from the invoice rules.
+- **Invoices created when a point-of-sale shift is closed** (ERPNext merges the shift's POS
+  Invoices into one Sales Invoice) are exempt too: they get no comprobante type or number.
+  Issuing comprobantes at the point of sale is not included yet.
 - The identity document rules apply to any customer or supplier that has an identity document
   filled in. A party without one is left untouched.
 - The interface is available in English and Spanish.
@@ -62,8 +65,9 @@ What happens on save:
 - A type without a number, or a number without a type, is rejected.
 - **Duplicates:** the same document cannot be registered twice among customers, nor twice
   among suppliers. The message links to the existing record. The same RUC may exist once as a
-  customer and once as a supplier.
-- The number is copied to ERPNext's **Tax ID** field.
+  customer and once as a supplier. The database refuses duplicates as well.
+- The number is copied to ERPNext's **Tax ID** field. Removing the document also removes that
+  copy, unless the Tax ID was changed separately.
 
 Not checked: whether the taxpayer exists or is active with SUNAT.
 
@@ -78,7 +82,8 @@ cannot submit sales invoices.
 - Addresses have a **Ubigeo** field (the six-digit district code).
 - When a Ubigeo is chosen, the city, county and state are filled from it if they are empty.
   What the user typed is never overwritten.
-- An address in Peru saved without Ubigeo shows a warning and is saved anyway.
+- An address in Peru saved without Ubigeo shows a warning and is saved anyway. The warning
+  appears only once the Ubigeo list has been loaded.
 - The district list is **not shipped**. It is loaded from a CSV file with the columns `code`,
   `department`, `province`, `district`:
 
@@ -136,7 +141,8 @@ The invoice is not submitted, and no number is used, unless:
 3. for a **Factura**, the customer is identified with a RUC (or with type `0`, non-domiciled,
    intended for exports);
 4. for a **Boleta de venta** whose total in soles, IGV included, is **more than S/ 700.00**,
-   the customer has an identity document (S/ 700.00 exactly is allowed without one);
+   the customer has an identity document (S/ 700.00 exactly is allowed without one); the same
+   applies to a credit or debit note that modifies a Boleta, measured on the note's amount;
 5. for a **credit or debit note**, a reason is selected and the modified comprobante is
    indicated (its type and its number, for example `F001-00000123`);
 6. the series is registered and enabled in SUNAT Voucher Series.
@@ -234,7 +240,7 @@ Company defaults set if empty: receivable `1212`, payable `4212`, income `70121`
 `7599` (provisional). Cash, bank, cost of sales, exchange difference and stock accounts are left
 for the accountant.
 
-Applying runs in the background and takes about half a minute; the page waits and then shows the result. If it fails, nothing is changed and the reason is shown. It needs a background worker, which every standard installation has.
+Applying runs in the background and takes about half a minute; the page waits and then shows the result. If it fails, nothing is changed and the reason is shown. It needs a background worker, which every standard installation has. Only one chart of accounts is changed at a time on a site: if another company's chart is being changed, the second run waits up to two minutes and is then refused with a message.
 
 ### The company's own sub-accounts
 

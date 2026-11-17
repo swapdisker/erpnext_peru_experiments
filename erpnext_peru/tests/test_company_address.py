@@ -83,11 +83,19 @@ class TestUbigeo(PeruTestCase):
 		self.assertEqual(address.county, "Lima")
 
 	def test_tx_cc_03_address_without_ubigeo_warns_but_saves(self):
+		make_ubigeo()  # the list is loaded
 		frappe.clear_messages()
 		address = make_address()
 		self.assertTrue(address.name)
 		messages = " ".join(str(m) for m in frappe.get_message_log())
 		self.assertIn("Ubigeo", messages)
+
+	def test_no_warning_before_the_ubigeo_list_is_loaded(self):
+		frappe.db.delete("Ubigeo")
+		frappe.clear_messages()
+		make_address()
+		messages = " ".join(str(m) for m in frappe.get_message_log())
+		self.assertNotIn("Ubigeo", messages)
 
 	def test_no_warning_outside_peru_or_with_ubigeo(self):
 		make_ubigeo()

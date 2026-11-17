@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import re
 
+from erpnext_peru.utils.errors import CodedError
+
 # Catálogo 06 codes that receive specific handling.
 DOC_NON_DOMICILED = "0"  # Doc. trib. no domiciliado sin RUC
 DOC_DNI = "1"
@@ -53,17 +55,8 @@ _ALNUM_RE = re.compile(r"^[A-Z0-9]+$")
 _PRINTABLE_RE = re.compile(r"^[!-~]+$")  # visible ASCII, no spaces
 
 
-class IdentityError(ValueError):
-	"""Raised when an identity document number is not valid.
-
-	``code`` is a stable machine-readable identifier so callers can translate
-	the message; ``params`` carries the values to interpolate.
-	"""
-
-	def __init__(self, code: str, message: str, **params):
-		super().__init__(message)
-		self.code = code
-		self.params = params
+class IdentityError(CodedError):
+	"""Raised when an identity document number is not valid."""
 
 
 def normalize_identity_number(number) -> str:

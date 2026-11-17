@@ -32,6 +32,9 @@ variar según la versión.
 - Las reglas de los comprobantes se aplican solo a las compañías cuyo **país es Perú**. Las
   compañías de otros países en el mismo sitio no se ven afectadas.
 - Las **facturas de apertura** ("Is Opening Entry" = Sí) están exentas de esas reglas.
+- También lo están las **facturas que se generan al cerrar un turno del punto de venta**
+  (ERPNext agrupa las POS Invoices del turno en una sola factura de venta): no reciben tipo ni
+  número de comprobante. La emisión de comprobantes en el punto de venta aún no está incluida.
 - Las reglas de documentos de identidad se aplican a todo cliente o proveedor que tenga un
   documento de identidad registrado. Si no lo tiene, no se le exige nada.
 - La interfaz está disponible en español y en inglés.
@@ -68,8 +71,10 @@ Al guardar:
 - Se rechaza un tipo sin número y un número sin tipo.
 - **Duplicados:** el mismo documento no puede registrarse dos veces entre los clientes, ni dos
   veces entre los proveedores. El mensaje enlaza al registro existente. El mismo RUC sí puede
-  existir una vez como cliente y otra como proveedor.
-- El número se copia al campo **Tax ID** de ERPNext.
+  existir una vez como cliente y otra como proveedor. La base de datos también rechaza los
+  duplicados.
+- El número se copia al campo **Tax ID** de ERPNext. Si se quita el documento, también se quita
+  esa copia, salvo que el Tax ID se haya cambiado por separado.
 
 No se verifica si el contribuyente existe o está activo en SUNAT.
 
@@ -84,7 +89,8 @@ no puede validar facturas de venta.
 - Las direcciones tienen un campo **Ubigeo** (el código de distrito de seis dígitos).
 - Al elegir un Ubigeo se completan la ciudad, la provincia y el departamento si están vacíos.
   Lo que el usuario escribió nunca se sobrescribe.
-- Una dirección en Perú guardada sin Ubigeo muestra un aviso y se guarda de todos modos.
+- Una dirección en Perú guardada sin Ubigeo muestra un aviso y se guarda de todos modos. El
+  aviso aparece solo cuando ya se cargó la lista de Ubigeo.
 - La lista de distritos **no viene incluida**. Se carga desde un archivo CSV con las columnas
   `code`, `department`, `province`, `district`:
 
@@ -142,7 +148,9 @@ El documento no se valida, y no se usa ningún número, salvo que:
 3. en una **Factura**, el cliente esté identificado con RUC (o con el tipo `0`, no
    domiciliado, pensado para exportaciones);
 4. en una **Boleta de venta** cuyo total en soles, con IGV, sea **mayor a S/ 700.00**, el
-   cliente tenga documento de identidad (con S/ 700.00 exactos se permite sin documento);
+   cliente tenga documento de identidad (con S/ 700.00 exactos se permite sin documento); lo
+   mismo vale para una nota de crédito o débito que modifica una Boleta, según el importe de la
+   nota;
 5. en una **nota de crédito o de débito**, se haya elegido el motivo e indicado el comprobante
    que modifica (su tipo y su número, por ejemplo `F001-00000123`);
 6. la serie esté registrada y habilitada en Series de Comprobantes SUNAT.
@@ -245,7 +253,7 @@ Valores predeterminados que se asignan si están vacíos: por cobrar `1212`, por
 ingresos `70121` y redondeo `7599` (provisional). Caja, banco, costo de ventas, diferencia de
 cambio y cuentas de existencias quedan para el contador.
 
-La aplicación se ejecuta en segundo plano y tarda alrededor de medio minuto; la página espera y luego muestra el resultado. Si falla, no se modifica nada y se muestra el motivo. Requiere un proceso de trabajo en segundo plano (worker), presente en toda instalación estándar.
+La aplicación se ejecuta en segundo plano y tarda alrededor de medio minuto; la página espera y luego muestra el resultado. Si falla, no se modifica nada y se muestra el motivo. Requiere un proceso de trabajo en segundo plano (worker), presente en toda instalación estándar. En un sitio se modifica un solo plan de cuentas a la vez: si se está modificando el de otra compañía, la segunda ejecución espera hasta dos minutos y luego se rechaza con un mensaje.
 
 ### Las subcuentas propias de la compañía
 

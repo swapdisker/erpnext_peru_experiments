@@ -1,6 +1,6 @@
 # erpnext_peru — handover
 
-Version 0.2.0, 16 November 2026. For the team that continues this work and for the accountant
+Version 0.2.0, 17 November 2026. For the team that continues this work and for the accountant
 who reviews it.
 
 ## 1. Read this first
@@ -13,7 +13,7 @@ who reviews it.
   Those choices are in section 6 and must be confirmed before real use.
 - **Its screens are almost untested.** The logic is tested through code against a real ERPNext
   site; forms were barely opened in a browser (section 9).
-- **Tested on ERPNext v15 only.**
+- **Tested on ERPNext v15 and v16** by the automated tests; the screens only on v15.
 
 What it does, in one paragraph: it validates Peruvian identity documents on customers and
 suppliers; adds comprobante type, series and a gapless number to sales invoices and enforces
@@ -56,8 +56,13 @@ the user's side.
   can be reused by importers. `overrides/` and `accounts/` are thin layers that call them and
   turn their error codes into translated messages (`overrides/common.py`).
 - **Only Peruvian companies are affected.** Every invoice hook returns at once unless the
-  company's country is Peru. Opening invoices (`is_opening = "Yes"`) are exempt as well. The
+  company's country is Peru. Opening invoices (`is_opening = "Yes"`) are exempt as well, and
+  so are the invoices ERPNext merges from POS Invoices when a shift is closed (section 8). The
   party hooks act only on parties that carry an identity document.
+- **The database backs up the important checks.** Unique indexes refuse a second voucher
+  with the same company, type and number, and a second customer (or supplier) with the same
+  identity document, even if a future bug or a direct write gets past the hooks
+  (`setup/constraints.py`).
 - **Defaults on save, rules on submit.** `validate` fills defaults and rejects values that can
   never be right. The rules that make a comprobante issuable run in `before_submit`, as the
   proposal specifies.
@@ -85,12 +90,15 @@ under concurrent submissions and after failures.
   a number cannot be deleted; the counter cannot be set below a number already issued.
 - Type and series are `no_copy`, so a credit note created from a Factura does not inherit
   "01 / F001".
+- Backstop: a unique index on Sales Invoice (`pe_voucher_number`, `pe_comprobante_type`,
+  `company`). Drafts hold NULL there, which a unique index allows any number of times.
 
 ### Identity documents
 
 Customer and Supplier carry `pe_identity_type` (SUNAT catalogue 06) and `pe_identity_number`.
-The number is normalized, validated, checked for duplicates within the same party type, and
-copied to ERPNext's Tax ID. The invoice stores its own copy of the customer's document
+The number is normalized, validated, checked for duplicates within the same party type (and
+by a unique index on (`pe_identity_number`, `pe_identity_type`)), and copied to ERPNext's Tax
+ID; removing the document removes that copy, unless the Tax ID was changed separately. The invoice stores its own copy of the customer's document
 (`pe_customer_identity_*`), refreshed until submission and frozen after it: the issued
 comprobante must not change if the master is corrected later.
 
@@ -106,11 +114,20 @@ comprobante must not change if the master is corrected later.
   the longest existing prefix of the code.
 - Both have a dry run that goes through the same code path and returns the same report, so
   the preview cannot drift from the real run. There is a test for that.
+- Both take a site-wide database lock (`chart_lock`, MariaDB `GET_LOCK`) when they write.
+  Creating accounts ends with rebuilding the account tree of every company, as ERPNext's own
+  chart creation does; two rebuilds at once can deadlock or, before MariaDB 11.6, leave the
+  tree numbering inconsistent. A second run waits up to two minutes, then is refused with a
+  message. If nothing has been written in the transaction yet, the lock also starts a fresh
+  snapshot, so the run sees what the previous one committed.
 
 **The button on the Company form** (`accounts/api.py`). The request does a dry run, so
 that whatever can be known in advance is refused on screen, then queues `run_pcge_job` and
-returns. The job works inside a savepoint: on any error it rolls back to it, writes the
-Error Log and records the message, so a failed run leaves the chart as it was. One job per
+returns. The job works inside a savepoint: on any error it rolls back to it (or, when a
+deadlock has already made MariaDB discard the savepoint, rolls back the whole transaction),
+writes the Error Log and records the message, so a failed run leaves the chart as it was. The
+"failed" state is recorded even if the rollback itself fails, so the page never waits for a
+job that has died. One job per
 company at a time. Two things here were found by tests and are easy to undo by accident:
 the state is read with `expires=True`, because otherwise Frappe keeps the first answer for
 the rest of the request and a state written a moment later is never seen; and the role check
@@ -155,12 +172,12 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **263 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
-  on two sites, one of them a fresh install, and in CI on GitHub (v15).
-- **Mutation check: 69 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **286 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+  on two sites, one of them a fresh install, and in CI on GitHub (v15 and v16).
+- **Mutation check: 83 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
+  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
   was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
@@ -182,7 +199,7 @@ Not shipped, because no official source could be confirmed or reached:
 
 - **The screens** (section 9).
 - **ERPNext v16 beyond the automated tests.** The suite passes on v16 in CI (Python 3.14,
-  MariaDB 11.8) and on the test machine (Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11): 262
+  MariaDB 11.8) and on the test machine (Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11): 285
   tests, 1 skipped. Not done for v16: the desk. v16 lists apps through Desktop Icon and
   Workspace Sidebar documents and none is shipped, so the "Peru" entry may not appear; the one
   skipped test is the one for the v15 sidebar. No v16 screen was ever opened.
@@ -205,7 +222,8 @@ Each is a judgement written into the code and easy to change. The file is given.
    (non-domiciled without RUC), intended for exports. Any other type is blocked.
 2. **Boleta threshold.** Identity is required when the total in soles, IGV included, is
    *strictly greater* than 700.00. The exemption for non-domiciled buyers who cannot have a
-   document is not implemented.
+   document is not implemented. A credit or debit note on a Boleta follows the same rule,
+   measured on the note's own amount (a credit note of S/ 800 needs the customer's document).
 3. **Default type.** Empty type becomes Factura when the customer has a RUC, Boleta otherwise.
    A Boleta to a customer with RUC is allowed, with a warning.
 4. **Purchase side is optional.** Type, series and number of the supplier's document are
@@ -244,6 +262,19 @@ Each is a judgement written into the code and easy to change. The file is given.
 16. **Zero-rate templates** post nothing and exist to state the treatment.
 17. **One template per document.** Invoices mixing taxed and exempt items are not handled.
 18. **The reduced rate** for small restaurants, hotels and lodging is not set up.
+19. **Prices including IGV are not provided for.** The 18% template adds IGV on top of the
+    price ("On Net Total"). Prices shown to consumers must include taxes, so a user who types
+    a shelf price of S/ 118 charges S/ 139.24. Decide whether retail sales need a second
+    template with "Is this Tax included in Basic Rate?" set, or price lists net of IGV, and
+    train users accordingly.
+
+### Presentation of the chart
+
+20. **Account names repeat.** 1,281 of the 1,764 PCGE accounts share their name with another
+    account ("Costo" 172 times, "Revaluación" 121, "Terceros", "Relacionadas"...), as printed by
+    the MEF. In account pickers only the number tells them apart. Decide whether to qualify the
+    names (for example "Mercaderías - venta local - Terceros"); `apply_pcge` keeps existing
+    names, so this is best decided before the PCGE is applied to a real company.
 
 ## 7. ERPNext behaviours that matter for Peru
 
@@ -311,8 +342,20 @@ in production:
 
 - **Cancellation is not restricted.** A submitted Factura can be cancelled in ERPNext. Under
   SUNAT rules that takes a comunicación de baja or a credit note. It belongs with e-invoicing.
-- **Identity duplicates are checked by the application, not by a database constraint.** Two
-  users saving the same new RUC in the same instant could both succeed.
+- **Point of sale has no comprobantes.** Closing a POS shift merges its sales into one Sales
+  Invoice per customer, usually the walk-in customer, and the returns into credit notes
+  without a reason. That invoice is not a comprobante (each sale at the counter needs its
+  own), so the app leaves it alone: it gets no type and no number. Before this was handled,
+  closing a shift above S/ 700 failed. Issuing a Boleta per POS sale, or the SUNAT daily
+  summary, is still to be designed. A merged invoice is recognised only when every item comes
+  from a submitted POS Invoice, so setting `is_consolidated` through the API does not bypass
+  the rules.
+- **Unique indexes are created on migrate, unless the data already has duplicates.** Then the
+  index is skipped, the duplicates are listed in the migrate output and the Error Log, and the
+  next migrate tries again; the application's check still guards new records. On a large
+  Sales Invoice table the first migrate spends time building the index.
+- **The chart lock does not cover single accounts created by hand.** ERPNext locks those
+  itself; the remaining risk is a person creating an account during an "Apply PCGE".
 - **Applying the PCGE needs a background worker.** It runs as a job on the `long` queue
   (about 30 seconds for 1,774 accounts on the test machine) while the form asks for its state
   every 3 seconds. With no worker running the state stays "queued"; after 35 minutes it is
@@ -392,8 +435,8 @@ Things to know:
 ### Conventions
 
 - Custom fields are declared in `setup/custom_fields.py` and nowhere else; `pe_` prefix.
-- A new rule goes in `utils/` if it can be stated without the database, with its own error
-  code; the hook translates the code into a message.
+- A new rule goes in `utils/` if it can be stated without the database, raising a subclass
+  of `utils/errors.CodedError` with its own code; the hook translates the code into a message.
 - Messages are written in English in the code and translated in `es.csv`.
 - A rule that can block a user needs a test for the allowed side and the blocked side.
 
@@ -439,13 +482,15 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 2. **Decide on v16.** All CI jobs are green. For v16 the desk entry and a click-through are
    missing (section 5, "Not verified"), and the counter lock on MariaDB 11.8 deserves a review
    (section 7, "Differences found on v16").
-3. **Accountant session on section 6.** Decisions 10–15 shape everything that posts.
+3. **Accountant session on section 6.** Decisions 10–15 and 19 shape everything that posts;
+   decision 20 should be settled before the PCGE is applied to a real company.
 4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
 5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
    show how well the PCGE mapping fits before anything is committed.
 6. **Load Ubigeo and "Tabla 10"** from official files.
 7. **CONCAR import engine**, parties first. Needs real export files.
-8. **E-invoicing.** Needs the OSE / PSE provider chosen and sandbox credentials.
+8. **E-invoicing**, including comprobantes at the point of sale (section 8). Needs the OSE /
+   PSE provider chosen and sandbox credentials.
 9. **SIRE.** Needs a real proposal from the client's SUNAT portal to compare against.
 10. **Destination entries**, after the accountant's mapping.
 11. **v16**, once the above is stable on v15.
@@ -462,7 +507,7 @@ docs/HANDOVER.md                this document
 tools/
   pcge/raw/                     the MEF catalogue as printed
   pcge/build_catalogue.py       raw transcription -> data/pcge_2019.csv
-  mutation_check.py             the 59 deliberate bugs
+  mutation_check.py             the 83 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -470,21 +515,23 @@ erpnext_peru/
     voucher.py                  series and numbers, issued and received
     amount_in_words.py          "SON: ... CON 00/100 SOLES"
     pcge.py                     the catalogue, element roots, root and account types
+    errors.py                   CodedError, base of the errors above
   overrides/                    document hooks
-    common.py                   error classes, message translation, is_peru_company
+    common.py                   error classes, message translation, is_peru_company / _invoice
     party.py                    Customer and Supplier identity
     company.py                  RUC of a Peruvian company
     address.py                  Ubigeo
     sales_invoice.py            comprobante rules and numbering on submit
     purchase_invoice.py         supplier document, duplicates
   accounts/
-    pcge.py                     apply_pcge, import_client_accounts
+    pcge.py                     apply_pcge, import_client_accounts, chart_lock
     igv.py                      setup_igv
     api.py                      methods the Company form calls; the PCGE background job
   public/js/company.js          the "Perú" menu on the Company form
   setup/
     custom_fields.py            every pe_* field
-    install.py                  creates fields, loads catalogues (install and migrate)
+    install.py                  creates fields, loads catalogues, indexes (install and migrate)
+    constraints.py              the unique indexes
     ubigeo.py                   CSV loader
   data/                         sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json
   erpnext_peru/workspace/peru/  the "Peru" entry in the sidebar
@@ -509,3 +556,4 @@ erpnext_peru/
 | 0.2.0 | `Apply the PCGE as a background job; add a v16 CI job` | Job, state and polling; own role check; experimental v16 matrix entry. |
 | 0.2.0 | `Make the app and its tests run on ERPNext v16` | Three v16 incompatibilities and the test-site preparation. |
 | 0.2.0 | `Voucher counter: wait for the row lock on MariaDB 11.6+` | Counter lock under snapshot isolation; "submit again" message; v16 CI job required. |
+| 0.2.0 | `Code review fixes: POS shifts, unique indexes, chart lock` | POS merged invoices exempt; database unique indexes; site-wide chart lock; robust job undo; notes on Boletas; Tax ID, Ubigeo warning and error-class fixes; CI lint. |

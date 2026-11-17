@@ -141,3 +141,4 @@
 "It is taking longer than expected. The job continues in the background: reload this page in a few minutes and check the chart of accounts.","Está tardando más de lo esperado. El proceso continúa en segundo plano: recargue esta página en unos minutos y revise el plan de cuentas.",""
 "Not permitted","No permitido",""
 "Another voucher of series {0} was being issued at the same moment. This document was not submitted: submit it again.","Se estaba emitiendo otro comprobante de la serie {0} en el mismo momento. Este documento no se validó: valídelo nuevamente.",""
+"Another chart of accounts is being changed on this site. Try again in a few minutes.","Se está modificando otro plan de cuentas en este sitio. Vuelva a intentarlo en unos minutos.",""

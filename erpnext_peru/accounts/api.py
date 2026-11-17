@@ -121,6 +121,23 @@ def pcge_job_status(company: str):
 	return get_job_state(company)
 
 
+JOB_SAVEPOINT = "erpnext_peru_pcge_job"
+
+
+def _undo_job():
+	"""Undo everything the job wrote.
+
+	Back to the savepoint, so that the transaction a test runs in survives.
+	A deadlock or a "record has changed" error makes MariaDB roll back the
+	whole transaction and forget the savepoint; then the transaction is
+	rolled back as a whole, which leaves the same result: nothing written.
+	"""
+	try:
+		frappe.db.rollback(save_point=JOB_SAVEPOINT)
+	except Exception:
+		frappe.db.rollback()
+
+
 def run_pcge_job(company: str, replace_existing: bool = False):
 	"""Background job. All or nothing: a failure leaves the chart as it was."""
 	previous = _read_state(company) or {}
@@ -131,14 +148,17 @@ def run_pcge_job(company: str, replace_existing: bool = False):
 		replace_existing=bool(replace_existing),
 		user=previous.get("user"),
 	)
-	frappe.db.savepoint("erpnext_peru_pcge_job")
+	frappe.db.savepoint(JOB_SAVEPOINT)
 	try:
 		report = apply_pcge(company, replace_existing=bool(replace_existing), dry_run=False)
 	except Exception as error:
-		frappe.db.rollback(save_point="erpnext_peru_pcge_job")
 		message = strip_html(str(error)).strip() or type(error).__name__
-		frappe.log_error(title=f"erpnext_peru: applying the PCGE to {company} failed")
-		_set_state(company, status=STATUS_FAILED, error=message)
+		try:
+			_undo_job()
+			frappe.log_error(title=f"erpnext_peru: applying the PCGE to {company} failed")
+		finally:
+			# Even if undoing failed (connection lost), the page must not wait forever.
+			_set_state(company, status=STATUS_FAILED, error=message)
 		return
 	if not frappe.flags.in_test:
 		frappe.db.commit()  # nosemgrep: the job is the unit of work

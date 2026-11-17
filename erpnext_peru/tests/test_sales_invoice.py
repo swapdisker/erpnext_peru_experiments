@@ -459,6 +459,17 @@ class TestCreditNotes(SalesInvoiceCase):
 		with self.assertRaises(ComprobanteError):
 			make_return(self.factura, pe_credit_note_reason="01", pe_series="BC01")
 
+	def test_credit_note_on_a_large_boleta_counts_its_amount(self):
+		"""Credit notes have negative totals: S/ -800 is above the S/ 700 threshold."""
+		boleta = make_sales_invoice(self.dni_customer, rate=800)
+		boleta.submit()
+		frappe.db.set_value(
+			"Customer", self.dni_customer, {"pe_identity_type": None, "pe_identity_number": None}
+		)
+		note = make_return(boleta, pe_credit_note_reason="07")
+		with self.assertRaises(ComprobanteError):
+			note.submit()
+
 	def test_credit_note_on_a_boleta_uses_the_b_series(self):
 		boleta = make_sales_invoice(self.dni_customer, rate=100)
 		boleta.submit()
@@ -569,6 +580,20 @@ class TestDebitNotes(SalesInvoiceCase):
 		note = self.make_debit_note(pe_debit_note_reason="02", pe_credit_note_reason="06")
 		self.assertIsNone(note.pe_credit_note_reason)
 
+	def test_note_on_a_boleta_above_700_must_identify_the_customer(self):
+		"""A note follows the rules of the voucher it modifies, Boleta included."""
+		make_series("08", "BD01")
+		boleta = make_sales_invoice(self.anonymous, rate=600)
+		boleta.submit()
+		values = {"is_debit_note": 1, "return_against": boleta.name, "pe_debit_note_reason": "02"}
+		small = make_sales_invoice(self.anonymous, rate=700, **values)
+		small.submit()  # exactly S/ 700.00: allowed
+		large = make_sales_invoice(self.anonymous, rate=700.01, **values)
+		self.assertEqual(large.pe_original_type, "03")
+		with self.assertRaises(ComprobanteError) as raised:
+			large.submit()
+		self.assertIn("700.00", str(raised.exception))
+
 	def test_debit_note_must_be_type_08(self):
 		with self.assertRaises(ComprobanteError):
 			self.make_debit_note(pe_comprobante_type="01", pe_debit_note_reason="01")
@@ -609,3 +634,77 @@ class TestScope(SalesInvoiceCase):
 		self.assertEqual(
 			frappe.db.get_value("SUNAT Voucher Series", "03-B001-" + PERU_COMPANY, "current_number"), 0
 		)
+
+
+class TestMergedPosInvoices(SalesInvoiceCase):
+	"""Closing a POS shift merges its sales into one Sales Invoice (is_consolidated)."""
+
+	def submitted_pos_invoice(self, name):
+		"""A submitted POS Invoice record. Only its existence and status matter here."""
+		doc = frappe.get_doc(
+			{
+				"doctype": "POS Invoice",
+				"company": PERU_COMPANY,
+				"customer": self.anonymous,
+				"posting_date": frappe.utils.today(),
+				"docstatus": 1,
+			}
+		)
+		doc.name = name
+		doc.db_insert()
+		return name
+
+	def build(self, pos_invoices, rate=50, qty=30):
+		"""A draft shaped like the one ERPNext's POS Invoice Merge Log creates."""
+		template = make_sales_invoice(self.anonymous, rate=rate, qty=qty)
+		invoice = frappe.copy_doc(template, ignore_no_copy=False)
+		template.delete()
+		invoice.is_consolidated = 1
+		invoice.flags.is_consolidated = True
+		row = invoice.items[0].as_dict(no_default_fields=True)
+		invoice.items = []
+		for name in pos_invoices:
+			invoice.append("items", {**row, "pos_invoice": name})
+		return invoice
+
+	def test_merged_invoice_of_a_shift_is_not_a_comprobante(self):
+		"""S/ 3,000 to the walk-in customer: as a Boleta it would be refused."""
+		pos = [self.submitted_pos_invoice("_TEST-PE-POS-1"), self.submitted_pos_invoice("_TEST-PE-POS-2")]
+		invoice = self.build(pos)
+		invoice.insert()
+		invoice.submit()
+		self.assertEqual(invoice.docstatus, 1)
+		self.assertEqual(flt(invoice.base_grand_total), 3000)
+		self.assertIsNone(invoice.pe_comprobante_type)
+		self.assertIsNone(invoice.pe_voucher_number)
+		self.assertEqual(
+			frappe.db.get_value("SUNAT Voucher Series", "03-B001-" + PERU_COMPANY, "current_number"), 0
+		)
+
+	def test_the_flag_alone_does_not_exempt_an_invoice(self):
+		"""An API client could set is_consolidated: the rules still apply then.
+
+		(A POS Invoice that does not exist is already refused by link validation.)
+		"""
+		pos = self.submitted_pos_invoice("_TEST-PE-POS-3")
+		cases = {
+			"no POS Invoice on the items": [None],
+			"one item without a POS Invoice": [pos, None],
+		}
+		for label, names in cases.items():
+			with self.subTest(label):
+				invoice = self.build(names)
+				invoice.insert()
+				self.assertEqual(invoice.pe_comprobante_type, "03")
+				with self.assertRaises(ComprobanteError):
+					invoice.submit()  # anonymous Boleta above S/ 700
+
+	def test_draft_pos_invoice_does_not_exempt(self):
+		submitted = self.submitted_pos_invoice("_TEST-PE-POS-4")
+		draft = self.submitted_pos_invoice("_TEST-PE-POS-5")
+		frappe.db.set_value("POS Invoice", draft, "docstatus", 0)
+		for names in ([draft], [submitted, draft]):
+			with self.subTest(names=names):
+				invoice = self.build(names)
+				invoice.insert()
+				self.assertEqual(invoice.pe_comprobante_type, "03")

@@ -13,10 +13,11 @@ from frappe import _
 from frappe.utils import cint, get_link_to_form
 
 from erpnext_peru.overrides.common import (
+	COMPROBANTE_TYPE_DOCTYPE,
 	ComprobanteError,
 	DuplicateVoucherError,
 	check_catalogue_entry,
-	is_peru_company,
+	is_peru_invoice,
 	throw_voucher_error,
 )
 from erpnext_peru.utils.voucher import (
@@ -30,11 +31,9 @@ from erpnext_peru.utils.voucher import (
 	validate_received_voucher,
 )
 
-COMPROBANTE_TYPE_DOCTYPE = "SUNAT Comprobante Type"
-
 
 def applies_to(doc) -> bool:
-	return is_peru_company(doc.company) and doc.get("is_opening") != "Yes"
+	return is_peru_invoice(doc)
 
 
 def validate(doc, method=None):
