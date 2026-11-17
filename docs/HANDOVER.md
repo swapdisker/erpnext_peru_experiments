@@ -40,7 +40,7 @@ the user's side.
 | Step 4 — destination entries (6 → 9 / 79) | Not started. |
 | Step 5 — e-invoicing (UBL, provider, CDR) | Not started. |
 | Step 6 — print format | Only the amount-in-words function. |
-| Step 7 — tests on v15 and v16, documentation | Tests pass on v15 and v16. The v16 screens and desk entry are not done. Feature descriptions in English and Spanish. |
+| Step 7 — tests on v15 and v16, documentation | Tests pass on v15 and v16; the main screens were checked by hand on both (section 9). Feature descriptions in English and Spanish. |
 | CONCAR toolkit, reconciliation, SIRE | Not started. |
 | Annexure A scenarios with an automated test | CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03, MD-CC-01..04, TX-UC-01..03, TX-CC-01..03 (20 of 81). Test names carry the ID. |
 
@@ -172,12 +172,12 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **286 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+- **291 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
   on two sites, one of them a fresh install, and in CI on GitHub (v15 and v16).
-- **Mutation check: 83 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 86 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
+  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November, 3 for the fixes from the screen check: the refusal to replace a chart with IGV set up, the apps-screen icon for website users, and clearing an obsolete field description on migrate). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
   was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
@@ -197,14 +197,9 @@ Not shipped, because no official source could be confirmed or reached:
 
 ### Not verified
 
-- **The screens** (section 9).
-- **ERPNext v16 beyond the automated tests.** The suite passes on v16 in CI (Python 3.14,
-  MariaDB 11.8) and on the test machine (Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11): 285
-  tests, 1 skipped. Not done for v16: the desk. v16 lists apps through Desktop Icon and
-  Workspace Sidebar documents and none is shipped, so the "Peru" entry may not appear; the one
-  skipped test is the one for the v15 sidebar. No v16 screen was ever opened.
-- **The background job from the browser.** The job itself was run through a real queue and
-  worker (below). The dialog that waits for it is JavaScript and has only been syntax-checked.
+- **ERPNext v16 in CI and on the test machine** passes the suite (Python 3.14, MariaDB 11.8 in
+  CI; Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11 locally): 291 tests, 1 skipped, the one
+  for the v15 sidebar. The screens were also checked on a v16 site (section 9).
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
   machine: it stops while creating its own fixtures, identically on a site without this app.
   That standard behaviour is unaffected rests on this app's tests that non-Peruvian companies
@@ -297,6 +292,9 @@ Found while building. Some are settings to change, some are traps.
 7. **Purchase invoices and perpetual inventory.** With it on (the default for a new company)
    every purchase invoice demands a "Stock Received But Not Billed" account. The tests run
    with it off, which matches booking purchases through 60 / 61. This is a design decision.
+   Seen on screen: on a company with the PCGE applied, the first purchase invoice is refused
+   until the accountant either turns perpetual inventory off or sets that account, and sets a
+   default expense account (or one per item). The PCGE leaves both empty on purpose (decision 14).
 8. **An account that is a company default cannot become a group.** Sub-accounts under 1212 or
    4212 need the default moved first. The import reports this as a conflict and continues.
 9. **A typed ledger can become a group** only with ERPNext's `exclude_account_type_check`
@@ -309,6 +307,9 @@ Found while building. Some are settings to change, some are traps.
 13. **List filters prefill new records.** Filtering the Customer list by identity type and
     then pressing "Add" creates a customer with that type already set.
 14. **`frappe.copy_doc` keeps the docstatus when tests are running.** Only relevant to tests.
+15. **A migrate does not remove a custom-field property that was dropped from the definition.**
+    The voucher number kept an old English description on upgraded sites. Clear a property by
+    setting it to `""` (a test now compares every description on the site with the definition).
 
 ### Differences found on v16
 
@@ -333,7 +334,11 @@ in production:
 - **A filter `("not in", ("", None))` matches nothing on v16.** The lookup of the accounts a
   company already has returned an empty list, so every account looked missing. It is now
   `("is", "set")`, which means the same on both versions. Avoid `None` inside `in` / `not in`.
-- **`frappe.desk.desktop.get_workspace_sidebar_items` is gone**, with the v15 sidebar.
+- **`frappe.desk.desktop.get_workspace_sidebar_items` is gone**, with the v15 sidebar. The v16
+  home page is an apps screen built from the `add_to_apps_screen` hook; without it there was no
+  way to the Peru workspace except its address. The hook adds a **Peru** icon for desk users
+  (`setup/apps_screen.py`). Frappe builds the workspace's sidebar by itself, from the module.
+- **`/app/...` addresses redirect to `/desk/...`.** Nothing in the app depends on either.
 - **`erpnext.setup.utils.before_tests` is gone.** A fresh v16 test site was never taken through
   the setup wizard, and creating a company failed ("Could not find Warehouse Type: Transit").
   The app's own `tests/utils.py: prepare_site` now does it on both versions.
@@ -367,28 +372,43 @@ in production:
 - **No roles or permissions of its own.** The form actions require System Manager or Accounts
   Manager; the catalogue masters are readable by everyone. The proposal's Migration User /
   Migration Approver roles do not exist yet.
-- **The "Peru" workspace** (sidebar entry with shortcuts to the series, the catalogues and
-  the related standard documents) was added last and has **not been seen in a browser**.
 - **The repository is marked "do not use"** in its README, at the owner's request.
 
 ## 9. State of the screens
 
-Seen on a Frappe Cloud site (ERPNext v15, Spanish interface):
+Checked by hand on two Frappe Cloud sites, Spanish interface, with made-up data: ERPNext v15
+(17 November) and ERPNext v16 (a fresh site, same day, after the fixes below). On both:
 
-- The app installs and migrates; the catalogue masters list correctly; Spanish labels load.
-- The catalogue lists show the code twice and "enabled" twice (ERPNext's own columns plus
-  ours). Cosmetic.
-- The new-customer pop-up did not show the identity fields. Fixed (they are now flagged for
-  quick entry) but **not re-checked on a site**.
+- **Company:** a RUC with a wrong check digit is refused with the Spanish message; a valid one
+  saves. The **Perú** menu has "Aplicar PCGE 2019" and "Configurar IGV".
+- **Apply PCGE**, replacing ERPNext's standard chart on a new company: preview, confirmation,
+  then the background job; 1,774 accounts. Defaults to confirm are named by their labels.
+- **Configure IGV:** 18 records, with the rounding-method warning. Afterwards, replacing the
+  chart is refused with a message that says why and what to do.
+- **Voucher series** F001, B001 and FC01 created from the form; the list reads correctly.
+- **Customers and suppliers** with RUC, from the quick-entry pop-up and the full form; the
+  identity fields show and the number is copied to Tax ID.
+- **Factura:** type defaulted from the RUC, IGV template applied, number assigned on submit
+  (F001-00000001). Ledger: 1212 debit 1,180; 40111 credit 180; 70121 credit 1,000.
+- **Credit note** made with "Create → Return": reason, type and number of the modified voucher
+  filled in, numbered FC01-00000001, ledger the exact reverse.
+- **Boleta of S/ 1,180 to a customer without a document:** saved as draft, refused on submit
+  ("Se requiere la identidad del cliente").
+- **Purchase invoice** from a supplier with RUC: number padded to 00000123 and copied to the
+  supplier invoice number; ledger 6011 debit 500, 40111 debit 90, 4212 credit 590. On a company
+  just given the PCGE, ERPNext first refused it twice (section 7, point 7).
+- **Address:** the Ubigeo field shows; no district can be chosen because the list is not loaded.
+- No JavaScript errors in the browser console.
+- **v16 only:** the Peru icon on the apps screen opens the workspace, with its shortcuts and cards.
 
-Never seen in a browser:
+Found on screen and fixed: the voucher series showed as a second "Secuencia" next to ERPNext's
+naming series; drafts showed "Número 0"; catalogue lists showed the code and "enabled" twice;
+the PCGE report named defaults by field name; replacing the chart after IGV failed half way
+with an ERPNext error; v16 had no way to the workspace; an obsolete English description stayed
+under the voucher number.
 
-- The "Peru" entry in the sidebar: its icon, shortcuts and cards.
-- The SUNAT section on Sales Invoice and Purchase Invoice: placement, the read-only number,
-  the note fields that should appear only on credit and debit notes.
-- **The "Perú" menu on the Company form** ("Aplicar PCGE 2019", "Configurar IGV"). It is
-  JavaScript, syntax-checked only. Try this first.
-- Every error message as a user sees it.
+Not seen: the print view (there is no print format), debit notes, foreign-currency invoices,
+point of sale, and anything on a phone-sized screen.
 
 ## 10. Working on it
 
@@ -557,3 +577,5 @@ erpnext_peru/
 | 0.2.0 | `Make the app and its tests run on ERPNext v16` | Three v16 incompatibilities and the test-site preparation. |
 | 0.2.0 | `Voucher counter: wait for the row lock on MariaDB 11.6+` | Counter lock under snapshot isolation; "submit again" message; v16 CI job required. |
 | 0.2.0 | `Code review fixes: POS shifts, unique indexes, chart lock` | POS merged invoices exempt; database unique indexes; site-wide chart lock; robust job undo; notes on Boletas; Tax ID, Ubigeo warning and error-class fixes; CI lint. |
+| 0.2.0 | `Fixes from the on-screen check; Peru icon on the v16 apps screen` | Labels, hidden draft number, list columns, chart-replace refusal, v16 apps-screen icon. |
+| 0.2.0 | `Clear the obsolete voucher-number description; screen check on v16` | Description cleared on migrate; handover section 9 rewritten from the v15 and v16 checks. |

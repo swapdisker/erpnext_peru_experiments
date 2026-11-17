@@ -85,3 +85,22 @@ class TestInstall(PeruTestCase):
 		doc.sales_issuable = 1
 		with self.assertRaises(frappe.ValidationError):
 			doc.save()
+
+	def test_field_descriptions_match_the_definitions(self):
+		# A property dropped from a definition stays on upgraded sites; it has to
+		# be set to "" instead (pe_number once kept an obsolete English text).
+		for doctype, fields in CUSTOM_FIELDS.items():
+			for df in fields if isinstance(fields, list) else [fields]:
+				with self.subTest(doctype=doctype, fieldname=df["fieldname"]):
+					description = frappe.db.get_value(
+						"Custom Field", {"dt": doctype, "fieldname": df["fieldname"]}, "description"
+					)
+					self.assertEqual(description or "", df.get("description", ""))
+
+	def test_migrate_clears_an_obsolete_description(self):
+		name = frappe.db.get_value("Custom Field", {"dt": "Sales Invoice", "fieldname": "pe_number"})
+		frappe.db.set_value(
+			"Custom Field", name, "description", "Assigned automatically when the invoice is submitted."
+		)
+		install.setup()
+		self.assertFalse(frappe.db.get_value("Custom Field", name, "description"))

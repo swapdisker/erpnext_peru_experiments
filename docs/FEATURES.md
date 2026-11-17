@@ -37,6 +37,9 @@ choices that still need an accountant.
 
 ## 2. The Peru entry in the sidebar
 
+On ERPNext v15 it is an entry in the sidebar. On v16 it is a **Peru** icon on the apps screen
+(the home page), shown to desk users only; the sidebar beside it is built by Frappe.
+
 A **Peru** workspace with:
 
 - shortcuts to SUNAT Voucher Series, Company, Customer, Supplier, Sales Invoice and Purchase
@@ -320,4 +323,5 @@ define. See [HANDOVER.md](HANDOVER.md), section 7.
 - Destination entries (6 → 9 / 79).
 - The daily SUNAT exchange rate.
 - The Ubigeo district list, and the wider list of document types for purchases.
-- ERPNext v16: the automated tests pass, but the desk entry is not built and no screen was checked.
+- Data for real use: everything was checked on test sites with made-up companies, customers and
+  amounts, on ERPNext v15 and v16.

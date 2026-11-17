@@ -51,6 +51,7 @@ def source_strings() -> set[str]:
 						isinstance(key, ast.Constant)
 						and key.value in ("label", "description")
 						and isinstance(value, ast.Constant)
+						and value.value  # "" clears an obsolete description
 					):
 						strings.add(value.value)
 	# __("...") calls in the form scripts

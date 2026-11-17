@@ -41,6 +41,10 @@ variar según la versión.
 
 ## 2. La entrada Perú en la barra lateral
 
+En ERPNext v15 es una entrada de la barra lateral. En v16 es un icono **Perú** en la pantalla de
+aplicaciones (la página de inicio), visible solo para los usuarios del escritorio; la barra
+lateral que lo acompaña la arma Frappe.
+
 Un espacio de trabajo **Perú** con:
 
 - accesos directos a Series de Comprobantes SUNAT, Compañía, Cliente, Proveedor, Factura de
@@ -335,4 +339,5 @@ que la configuración del PCGE no define. Vea [HANDOVER.md](HANDOVER.md), secci�
 - Asientos de destino (6 → 9 / 79).
 - Tipo de cambio diario de SUNAT.
 - La lista de distritos de Ubigeo y la lista ampliada de tipos de documento para compras.
-- ERPNext v16: las pruebas automáticas pasan, pero falta la entrada en el escritorio y no se revisó ninguna pantalla.
+- Uso con datos reales: todo se revisó en sitios de prueba con compañías, clientes e importes
+  inventados, en ERPNext v15 y v16.

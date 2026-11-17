@@ -107,6 +107,9 @@ CUSTOM_FIELDS = {
 			"print_hide": 1,
 			# A draft holds 0, which reads like a real number.
 			"depends_on": "eval:doc.pe_number",
+			# Explicitly empty: an earlier version had a description here, and a
+			# migrate only overwrites the properties that are listed.
+			"description": "",
 		},
 		{
 			"fieldname": "pe_voucher_number",
