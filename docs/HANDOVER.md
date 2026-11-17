@@ -460,6 +460,16 @@ Things to know:
 - Messages are written in English in the code and translated in `es.csv`.
 - A rule that can block a user needs a test for the allowed side and the blocked side.
 
+### Deploying on Frappe Cloud
+
+Bench → Apps → the app's menu → "Fetch Latest Updates", then "Update Available", select only
+this app and the sites. **Check the site's Jobs afterwards.** When a commit changes no DocType
+file, Frappe Cloud runs "Update Site Pull" instead of "Update Site Migrate", so `after_migrate`
+does not run and changes to `setup/custom_fields.py`, the catalogues or the unique indexes do
+not reach the database. Seen on 17 November with the description fix. Run Site → Actions →
+"Migrate Site" (in-place) in that case. Bumping "modified" on a DocType JSON in the same commit
+also forces a migrate.
+
 ## 11. Where the remaining work plugs in
 
 **E-invoicing.**
@@ -579,3 +589,4 @@ erpnext_peru/
 | 0.2.0 | `Code review fixes: POS shifts, unique indexes, chart lock` | POS merged invoices exempt; database unique indexes; site-wide chart lock; robust job undo; notes on Boletas; Tax ID, Ubigeo warning and error-class fixes; CI lint. |
 | 0.2.0 | `Fixes from the on-screen check; Peru icon on the v16 apps screen` | Labels, hidden draft number, list columns, chart-replace refusal, v16 apps-screen icon. |
 | 0.2.0 | `Clear the obsolete voucher-number description; screen check on v16` | Description cleared on migrate; handover section 9 rewritten from the v15 and v16 checks. |
+| 0.2.0 | `Handover: Frappe Cloud may deploy without a migrate` | Deployment note. |
