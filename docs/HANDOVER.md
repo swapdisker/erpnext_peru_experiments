@@ -381,6 +381,10 @@ in production:
   hours: `bench clear-cache` during a run loses the message, not the job.
 - **Replacing a chart deletes accounts.** It is refused when the company has ledger entries,
   and every deletion passes ERPNext's link checks, but it is the one destructive action here.
+- **Address labels.** ERPNext's Spanish interface calls County "Condado" and State "Provincia",
+  so a Peruvian address shows its province under "Condado" and its department under
+  "Provincia". Relabelling them (to Provincia / Departamento) would change the form for every
+  country; not done. Decide with the users.
 - **Uninstalling** leaves the custom fields and their data.
 - **No roles or permissions of its own.** The form actions require System Manager or Accounts
   Manager; the catalogue masters are readable by everyone. The proposal's Migration User /
@@ -410,7 +414,10 @@ Checked by hand on two Frappe Cloud sites, Spanish interface, with made-up data:
 - **Purchase invoice** from a supplier with RUC: number padded to 00000123 and copied to the
   supplier invoice number; ledger 6011 debit 500, 40111 debit 90, 4212 credit 590. On a company
   just given the PCGE, ERPNext first refused it twice (section 7, point 7).
-- **Address:** the Ubigeo field shows; the district list was not loaded at the time (it is now, see section 4).
+- **Address** (v16, after the Ubigeo list shipped): typing "jesus maria" in Ubigeo offers 150113
+  Jesús María, Lima, Lima (enabled codes only); choosing it fills City, County and State; the
+  address saves. Before the form script was added, the form refused to save because City is
+  mandatory in the browser.
 - No JavaScript errors in the browser console.
 - **v16 only:** the Peru icon on the apps screen opens the workspace, with its shortcuts and cards.
 
