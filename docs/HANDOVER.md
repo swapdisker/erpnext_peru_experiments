@@ -185,12 +185,12 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **302 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+- **303 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
   on two sites, one of them a fresh install, and in CI on GitHub (v15 and v16).
-- **Mutation check: 93 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 94 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November, 3 for the fixes from the screen check: the refusal to replace a chart with IGV set up, the apps-screen icon for website users, and clearing an obsolete field description on migrate, 7 for the Ubigeo loader and the address field). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
+  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November, 3 for the fixes from the screen check: the refusal to replace a chart with IGV set up, the apps-screen icon for website users, and clearing an obsolete field description on migrate, 8 for the Ubigeo loader and the address form). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
   was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
@@ -211,7 +211,7 @@ Not shipped, because no official source could be confirmed or reached:
 ### Not verified
 
 - **ERPNext v16 in CI and on the test machine** passes the suite (Python 3.14, MariaDB 11.8 in
-  CI; Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11 locally): 302 tests, 1 skipped, the one
+  CI; Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11 locally): 303 tests, 1 skipped, the one
   for the v15 sidebar. The screens were also checked on a v16 site (section 9).
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
   machine: it stops while creating its own fixtures, identically on a site without this app.
@@ -555,7 +555,7 @@ tools/
   ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
                                 SUNAT Catálogo 13 (2014)
   ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
-  mutation_check.py             the 93 deliberate bugs
+  mutation_check.py             the 94 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -610,3 +610,4 @@ erpnext_peru/
 | 0.2.0 | `Clear the obsolete voucher-number description; screen check on v16` | Description cleared on migrate; handover section 9 rewritten from the v15 and v16 checks. |
 | 0.2.0 | `Handover: Frappe Cloud may deploy without a migrate` | Deployment note. |
 | 0.2.0 | `Ship the Ubigeo list: 1,893 districts from INEI, with accents` | `tools/ubigeo/`, `data/ubigeo.csv`, load on migrate, enabled flag, address filter. |
+| 0.2.0 | `Address form: fill City from the Ubigeo when it is chosen` | Found on screen: City is mandatory in the form, so the save-time fill came too late. |

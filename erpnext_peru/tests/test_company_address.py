@@ -125,6 +125,17 @@ class TestUbigeo(PeruTestCase):
 		for link_filters in (definition.get("link_filters"), field.link_filters):
 			self.assertEqual(frappe.parse_json(link_filters), [["Ubigeo", "enabled", "=", 1]])
 
+	def test_the_address_form_fills_city_from_the_ubigeo(self):
+		# City is mandatory in the form: the script must fill it before saving.
+		import os
+
+		[path] = frappe.get_hooks("doctype_js", app_name="erpnext_peru")["Address"]
+		with open(frappe.get_app_path("erpnext_peru", path), encoding="utf-8") as handle:
+			script = handle.read()
+		self.assertIn("pe_ubigeo", script)
+		self.assertIn("city: message.district", script)
+		self.assertTrue(os.path.isfile(frappe.get_app_path("erpnext_peru", path)))
+
 	def test_search_by_district_name_ignores_accents(self):
 		from frappe.desk.search import search_link
 

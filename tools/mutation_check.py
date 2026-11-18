@@ -159,6 +159,7 @@ M = [
 	),
 	("setup/ubigeo.py", "	if missing:", "	if False:", "b", "test_company_address"),
 	("setup/install.py", "	load_ubigeo()\n", "", "b", "test_company_address"),
+	("hooks.py", ', "Address": "public/js/address.js"}', "}", "b", "test_company_address"),
 	(
 		"overrides/address.py",
 		"		if row and not row.enabled:",
