@@ -2,6 +2,8 @@
 # License: GNU General Public License v3. See license.txt
 """Annexure A, module 3 (comprobante fields and rules) on Sales Invoices."""
 
+from unittest.mock import patch
+
 import frappe
 from frappe.utils import flt
 
@@ -720,27 +722,53 @@ class TestPosReturns(SalesInvoiceCase):
 		self.boleta.submit()
 
 	def pos_return(self, qty=None, reason=None, is_pos=1):
+		"""A draft return as the point of sale saves it (validate only)."""
 		from erpnext_peru.overrides import sales_invoice
 
 		note = make_return(self.boleta, pe_credit_note_reason="07")  # a valid draft first
 		note.pe_credit_note_reason = reason
 		note.is_pos = is_pos
 		if qty is not None:
-			note.items[0].qty = note.items[0].stock_qty = -qty
+			self.set_qty(note, qty)
 		sales_invoice.validate(note)
 		return note
 
+	def set_qty(self, note, qty):
+		note.items[0].qty = note.items[0].stock_qty = -qty
+
+	def submit(self, note):
+		"""The app's submission hook, with the number allocation stubbed out."""
+		from erpnext_peru.overrides import sales_invoice
+
+		with patch.object(sales_invoice, "allocate_next_number", return_value=1):
+			sales_invoice.before_submit(note)
+		return note
+
 	def test_returning_everything_is_a_total_return(self):
-		self.assertEqual(self.pos_return().pe_credit_note_reason, "06")
+		self.assertEqual(self.submit(self.pos_return()).pe_credit_note_reason, "06")
 
 	def test_returning_part_is_a_return_by_item(self):
-		self.assertEqual(self.pos_return(qty=1).pe_credit_note_reason, "07")
+		self.assertEqual(self.submit(self.pos_return(qty=1)).pe_credit_note_reason, "07")
+
+	def test_the_reason_is_not_set_on_save(self):
+		self.assertIsNone(self.pos_return().pe_credit_note_reason)
+
+	def test_the_cart_as_submitted_decides(self):
+		"""The cashier goes to the payment (the draft is saved), edits the cart, then pays."""
+		from erpnext_peru.overrides import sales_invoice
+
+		note = self.pos_return()  # saved with all 3 units
+		self.set_qty(note, 1)
+		sales_invoice.validate(note)  # saved again with 1 unit
+		self.assertEqual(self.submit(note).pe_credit_note_reason, "07")
 
 	def test_a_reason_chosen_by_the_user_is_kept(self):
-		self.assertEqual(self.pos_return(reason="01").pe_credit_note_reason, "01")
+		self.assertEqual(self.submit(self.pos_return(reason="01")).pe_credit_note_reason, "01")
 
 	def test_returns_outside_the_point_of_sale_still_need_a_reason(self):
-		self.assertIsNone(self.pos_return(is_pos=0).pe_credit_note_reason)
+		note = self.pos_return(is_pos=0)
+		with self.assertRaisesRegex(ComprobanteError, "reason of the credit note"):
+			self.submit(note)
 
 	def test_without_the_original_sale_it_is_a_return_by_item(self):
 		from erpnext_peru.overrides.sales_invoice import _pos_return_reason

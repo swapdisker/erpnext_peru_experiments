@@ -130,6 +130,7 @@ def before_submit(doc, method=None):
 	_validate_issuer(doc)
 	_validate_igv_is_stated(doc)
 	_validate_customer_identity(doc)
+	_fill_pos_return_reason(doc)
 	_validate_note(doc)
 
 	if not doc.pe_series:
@@ -251,8 +252,6 @@ def _set_note_fields(doc):
 
 	if comprobante_type == TYPE_CREDIT_NOTE:
 		doc.pe_debit_note_reason = None
-		if cint(doc.get("is_pos")) and not doc.pe_credit_note_reason:
-			doc.pe_credit_note_reason = _pos_return_reason(doc)
 	else:
 		doc.pe_credit_note_reason = None
 
@@ -282,6 +281,21 @@ def _set_note_fields(doc):
 			throw_voucher_error(error)
 	else:
 		doc.pe_original_voucher_number = None
+
+
+def _fill_pos_return_reason(doc):
+	"""Give a return made at the point of sale its reason, from the cart as submitted.
+
+	Not on save: the point of sale saves the draft when the cashier goes to the
+	payment and still lets them edit the cart afterwards. A reason chosen on the
+	desk form is kept.
+	"""
+	if (
+		doc.pe_comprobante_type == TYPE_CREDIT_NOTE
+		and cint(doc.get("is_pos"))
+		and not doc.pe_credit_note_reason
+	):
+		doc.pe_credit_note_reason = _pos_return_reason(doc)
 
 
 def _pos_return_reason(doc) -> str:

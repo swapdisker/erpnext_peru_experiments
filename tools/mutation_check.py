@@ -162,8 +162,15 @@ M = [
 	# Review fixes of 17 November (v16 only)
 	(
 		"overrides/sales_invoice.py",
-		'		if cint(doc.get("is_pos")) and not doc.pe_credit_note_reason:',
-		"		if False:",
+		"	_fill_pos_return_reason(doc)\n	_validate_note(doc)",
+		"	_validate_note(doc)",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/sales_invoice.py",
+		'		and cint(doc.get("is_pos"))\n		and not doc.pe_credit_note_reason\n',
+		'		and cint(doc.get("is_pos"))\n',
 		"b",
 		"test_sales_invoice",
 	),
