@@ -35,8 +35,9 @@ variar según la versión.
 - **Punto de venta.** Cada venta en caja es una factura de venta (lo predeterminado en la
   Configuración POS de ERPNext v16), así que es un comprobante como cualquier otro: recibe tipo,
   serie y número al validarse, y se aplica la regla de los S/ 700. Una devolución hecha en caja
-  es una nota de crédito cuyo motivo se llena solo: `06` (devolución total) cuando vuelven
-  completos todos los artículos de la venta, `07` (devolución por ítem) en otro caso. Si la
+  es una nota de crédito cuyo motivo se llena solo al validarla, según el carrito en ese
+  momento: `06` (devolución total) cuando vuelven completos todos los artículos de la venta,
+  `07` (devolución por ítem) en otro caso. Un motivo elegido a mano se respeta. Si la
   Configuración POS se cambia a POS Invoices, la factura que ERPNext genera al cerrar el turno
   queda exenta: no recibe tipo ni número.
 - Las reglas de documentos de identidad se aplican a todo cliente o proveedor que tenga un
@@ -131,7 +132,8 @@ Una sección **Comprobante de pago (SUNAT)** en la Factura de venta:
 - **Tipo:** si se deja vacío, se asigna Factura cuando el cliente tiene RUC y Boleta en los
   demás casos. Una devolución pasa a ser Nota de crédito y una nota de débito, Nota de débito.
 - **Serie:** si se deja vacía, se completa cuando la compañía tiene exactamente una serie
-  habilitada para ese tipo. Si hay varias, se debe elegir.
+  habilitada para ese tipo. Si hay varias, se debe elegir. Si cambia el tipo de un borrador
+  guardado, la serie que quedó del tipo anterior se vuelve a elegir de la misma forma.
 - **Comprobante que modifica:** en una nota creada a partir de un comprobante emitido en este
   sistema, el tipo y el número de ese comprobante se completan y no se pueden cambiar a mano.
 - **Documento del cliente:** se copia del cliente cada vez que se guarda, hasta la validación.
@@ -166,7 +168,9 @@ El documento no se valida, y no se usa ningún número, salvo que:
 6. la serie esté registrada y habilitada en Series de Comprobantes SUNAT.
 
 En un documento en otra moneda, el límite de S/ 700 se mide sobre el importe convertido a
-soles.
+soles. Esto vale también para una compañía que lleva su contabilidad en otra moneda: el total se
+convierte con el tipo de cambio de la fecha de contabilización, y la Boleta se rechaza si no hay
+un tipo de cambio a PEN registrado en Cambio de Divisas.
 
 ### Después de validar
 
@@ -195,6 +199,7 @@ En **Series de Comprobantes SUNAT** se registra cada serie que emite una compañ
   sola vez.
 - No se puede poner por debajo de un número ya emitido, incluidos los comprobantes anulados.
 - La compañía, el tipo y la serie no se pueden cambiar después de crear el registro.
+- Cada serie se registra una sola vez por compañía y tipo, así que tiene un único contador.
 - Una serie ya usada no se puede eliminar; se deshabilita.
 - Los números van de 1 a 99,999,999 y se muestran con ocho dígitos.
 
@@ -229,7 +234,8 @@ Estos campos son opcionales por ahora. Cuando se llenan:
 - una nota de crédito o de débito necesita el comprobante que modifica para poder validarse;
   se completa solo cuando la nota se crea a partir de una factura que lo tiene;
 - el campo **Supplier Invoice No** de ERPNext se llena con el número de comprobante si está
-  vacío.
+  vacío, y lo sigue cuando ese número se corrige o se borra. Un Supplier Invoice No escrito
+  aparte se respeta.
 
 ## 9. Plan de cuentas: PCGE 2019
 

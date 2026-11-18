@@ -31,8 +31,9 @@ choices that still need an accountant.
 - **Point of sale.** Each sale at the counter is a Sales Invoice (the default in ERPNext v16's
   POS Settings), so it is a comprobante like any other: it gets a type, series and number on
   submission, and the S/ 700 rule applies. A return made at the counter is a credit note whose
-  reason is filled in for you: `06` (total return) when every item of the sale comes back in
-  full, `07` (return by item) otherwise. If POS Settings are switched to POS Invoices, the
+  reason is filled in for you when the return is submitted, from the cart as it is at that
+  moment: `06` (total return) when every item of the sale comes back in full, `07` (return by
+  item) otherwise. A reason chosen by hand is kept. If POS Settings are switched to POS Invoices, the
   invoice ERPNext builds when the shift is closed is exempt instead: it gets no type or number.
 - The identity document rules apply to any customer or supplier that has an identity document
   filled in. A party without one is left untouched.
@@ -121,7 +122,8 @@ A section **Comprobante de pago (SUNAT)** on the Sales Invoice:
 - **Type:** left empty, it becomes Factura when the customer has a RUC and Boleta otherwise. A
   return becomes a Nota de crédito and a debit note a Nota de débito.
 - **Series:** left empty, it is filled in when the company has exactly one enabled series for
-  that type. With several, you choose.
+  that type. With several, you choose. When the type of a saved draft changes, a series that
+  was left over from the previous type is chosen again the same way.
 - **Modified comprobante:** on a note created from an invoice issued in this system, the type
   and number of that invoice are filled in and cannot be overridden by hand.
 - **Customer document:** copied from the customer on every save until submission. After
@@ -155,7 +157,9 @@ The invoice is not submitted, and no number is used, unless:
 6. the series is registered and enabled in SUNAT Voucher Series.
 
 For an invoice in another currency, the S/ 700 threshold is measured on the amount converted
-to soles.
+to soles. This also holds for a company that keeps its books in another currency: the total is
+converted with the exchange rate of the posting date, and the Boleta is refused if no rate to
+PEN is registered in Currency Exchange.
 
 ### After submission
 
@@ -182,6 +186,7 @@ Cancellation itself is not restricted: see [section 14](#14-what-is-not-included
 - To continue the numbering of a previous system, set **Last Number Issued** once.
 - It cannot be set below a number that has already been issued, including cancelled vouchers.
 - Company, type and series cannot be changed after creation.
+- Each series can be registered only once per company and type, so it has a single counter.
 - A series that has been used cannot be deleted; disable it instead.
 - Numbers go from 1 to 99,999,999 and are shown with eight digits.
 
@@ -214,7 +219,9 @@ These fields are optional at this stage. When filled in:
 - a purchase return must be type 07, and a type 07 document must be entered as a return;
 - a credit or debit note needs the modified comprobante to be submitted; it is filled in
   automatically when the note is created from an invoice that has it;
-- ERPNext's **Supplier Invoice No** is filled with the voucher number if it is empty.
+- ERPNext's **Supplier Invoice No** is filled with the voucher number if it is empty, and
+  follows the voucher number when that is corrected or removed. A Supplier Invoice No typed
+  separately is kept.
 
 ## 9. Chart of accounts: PCGE 2019
 
