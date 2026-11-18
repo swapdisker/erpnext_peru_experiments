@@ -40,6 +40,17 @@ class TestVoucherSeries(PeruTestCase):
 		with self.assertRaises(frappe.DuplicateEntryError):
 			make_series("01", "f001")
 
+	def test_one_counter_per_series_after_a_company_rename(self):
+		"""The record's name embeds the company: a rename must not allow a second counter."""
+		first = make_series("01", "F001")
+		# What a company rename leaves behind: the record keeps its old name.
+		frappe.db.sql(
+			"update `tabSUNAT Voucher Series` set name = %s where name = %s",
+			("01-F001-Old Company Name", first.name),
+		)
+		with self.assertRaisesRegex(frappe.DuplicateEntryError, "already registered"):
+			make_series("01", "F001")
+
 	def test_validation(self):
 		with self.assertRaises(ComprobanteError):
 			make_series("01", "B001")

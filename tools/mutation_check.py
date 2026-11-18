@@ -575,6 +575,13 @@ M = [
 		"b",
 		"test_purchase_invoice",
 	),
+	(
+		"erpnext_peru/doctype/sunat_voucher_series/sunat_voucher_series.py",
+		"		self._check_not_registered_twice()\n",
+		"",
+		"b",
+		"test_voucher_series",
+	),
 ]
 
 

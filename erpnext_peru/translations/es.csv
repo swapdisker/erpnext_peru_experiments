@@ -144,3 +144,4 @@
 "ERPNext Peru requires {0} version {1}. This bench has version {2}.","ERPNext Peru requiere {0} versión {1}. Este bench tiene la versión {2}.",""
 "The transactions of {0} cannot be deleted: {1} comprobantes have been issued with their numbers, and they must remain on record.","No se pueden eliminar las transacciones de {0}: se emitieron {1} comprobantes con su número y deben conservarse.",""
 "Comprobantes Issued","Comprobantes emitidos",""
+"Series {0} of comprobante type {1} is already registered for {2}: {3}.","La serie {0} del tipo de comprobante {1} ya está registrada para {2}: {3}.",""

@@ -48,6 +48,8 @@ class SUNATVoucherSeries(Document):
 		except VoucherError as error:
 			throw_voucher_error(error)
 
+		self._check_not_registered_twice()
+
 		self.current_number = cint(self.current_number)
 		if self.current_number < 0 or self.current_number > MAX_NUMBER:
 			frappe.throw(_("Last Number Issued must be between 0 and {0}.").format(MAX_NUMBER))
@@ -58,6 +60,31 @@ class SUNATVoucherSeries(Document):
 				_(
 					"Last Number Issued cannot be lower than {0}: voucher {1} has already been issued in this series."
 				).format(highest_used, frappe.bold(format_voucher_number(self.series, highest_used)))
+			)
+
+	def _check_not_registered_twice(self):
+		"""One record, and so one counter, per company, type and series.
+
+		The name normally guarantees it, but it embeds the company's name: once a
+		company is renamed, the same series could otherwise be registered again
+		under the new name, with a second counter.
+		"""
+		other = frappe.db.get_value(
+			"SUNAT Voucher Series",
+			{
+				"company": self.company,
+				"comprobante_type": self.comprobante_type,
+				"series": self.series,
+				"name": ("!=", self.name),
+			},
+			"name",
+		)
+		if other:
+			frappe.throw(
+				_("Series {0} of comprobante type {1} is already registered for {2}: {3}.").format(
+					frappe.bold(self.series), self.comprobante_type, frappe.bold(self.company), other
+				),
+				frappe.DuplicateEntryError,
 			)
 
 	def on_trash(self):
