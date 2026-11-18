@@ -200,7 +200,7 @@ erpnext_peru.setup_igv = function (frm) {
 						html += erpnext_peru.list_html(report.default_changed, (row) => esc(row));
 					}
 					(report.warnings || []).forEach((warning) => {
-						html += `<p class="text-warning">${warning}</p>`;
+						html += `<p class="text-warning">${esc(warning)}</p>`;
 					});
 					frappe.msgprint({
 						title: __("IGV set up"),

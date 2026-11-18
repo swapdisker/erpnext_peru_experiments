@@ -1,6 +1,6 @@
 # Copyright (c) 2026, erpnext_peru contributors
 # License: GNU General Public License v3. See license.txt
-"""The "Peru" icon on the apps screen (Frappe v15 /apps, v16 home)."""
+"""The "Peru" icon on the apps screen (the home page)."""
 
 import frappe
 

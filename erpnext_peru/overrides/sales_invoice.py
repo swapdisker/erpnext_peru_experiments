@@ -58,6 +58,11 @@ BOLETA_ID_THRESHOLD = 700.0
 CREDIT_REASON_DOCTYPE = "SUNAT Credit Note Reason"
 DEBIT_REASON_DOCTYPE = "SUNAT Debit Note Reason"
 
+# SUNAT catalogue 09 reasons for a return made at the point of sale, whose
+# screen has no field for the reason.
+REASON_TOTAL_RETURN = "06"  # Devolución total
+REASON_ITEM_RETURN = "07"  # Devolución por ítem
+
 
 def applies_to(doc) -> bool:
 	return is_peru_invoice(doc) and not is_merged_pos_invoice(doc)
@@ -246,6 +251,8 @@ def _set_note_fields(doc):
 
 	if comprobante_type == TYPE_CREDIT_NOTE:
 		doc.pe_debit_note_reason = None
+		if cint(doc.get("is_pos")) and not doc.pe_credit_note_reason:
+			doc.pe_credit_note_reason = _pos_return_reason(doc)
 	else:
 		doc.pe_credit_note_reason = None
 
@@ -275,6 +282,31 @@ def _set_note_fields(doc):
 			throw_voucher_error(error)
 	else:
 		doc.pe_original_voucher_number = None
+
+
+def _pos_return_reason(doc) -> str:
+	"""06 when the return gives back everything the original sale had, 07 otherwise.
+
+	Only quantities per item are compared; an earlier partial return of the same
+	sale makes this one a return by item.
+	"""
+	if not doc.get("return_against"):
+		return REASON_ITEM_RETURN
+	sold = _quantities_by_item(
+		frappe.get_all(
+			"Sales Invoice Item", filters={"parent": doc.return_against}, fields=["item_code", "stock_qty"]
+		)
+	)
+	returned = _quantities_by_item(doc.get("items") or [])
+	return REASON_TOTAL_RETURN if sold and returned == sold else REASON_ITEM_RETURN
+
+
+def _quantities_by_item(rows) -> dict:
+	totals = {}
+	for row in rows:
+		code = row.get("item_code")
+		totals[code] = totals.get(code, 0) + abs(flt(row.get("stock_qty")))
+	return {code: flt(qty, 6) for code, qty in totals.items() if qty}
 
 
 def _series_options(doc) -> list[str]:

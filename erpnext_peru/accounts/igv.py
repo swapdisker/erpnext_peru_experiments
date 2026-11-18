@@ -92,7 +92,7 @@ def setup_igv(company: str) -> dict:
 	)
 	_check_rounding_method(report)
 
-	_disable_erpnext_default_templates(company, abbr, report)
+	report.disabled += disable_erpnext_default_templates(company, abbr)
 
 	for name in TAX_CATEGORIES:
 		if frappe.db.exists("Tax Category", name):
@@ -147,7 +147,7 @@ def _check_rounding_method(report):
 		report.warnings.append(
 			_(
 				"This site rounds with {0}: an IGV amount that falls exactly on half a céntimo is rounded to the even digit (0.045 becomes 0.04). Ask the accountant whether System Settings > Rounding Method should be Commercial Rounding."
-			).format(frappe.bold(method))
+			).format(method)
 		)
 
 
@@ -181,8 +181,9 @@ def get_igv_account(company: str) -> str:
 	return row.name
 
 
-def _disable_erpnext_default_templates(company, abbr, report):
-	"""Disable the 16% "Peru Tax" templates ERPNext creates on its own."""
+def disable_erpnext_default_templates(company, abbr) -> list[str]:
+	"""Disable the 16% "Peru Tax" templates ERPNext creates on its own. Returns what was disabled."""
+	disabled = []
 	name = f"{ERPNEXT_DEFAULT_TEMPLATE_TITLE} - {abbr}"
 	for doctype in (SALES_DOCTYPE, PURCHASE_DOCTYPE, "Item Tax Template"):
 		row = frappe.db.get_value(
@@ -194,7 +195,8 @@ def _disable_erpnext_default_templates(company, abbr, report):
 		if doctype != "Item Tax Template":
 			values["is_default"] = 0
 		frappe.db.set_value(doctype, name, values)
-		report.disabled.append(f"{doctype}: {name}")
+		disabled.append(f"{doctype}: {name}")
+	return disabled
 
 
 def _ensure_template(

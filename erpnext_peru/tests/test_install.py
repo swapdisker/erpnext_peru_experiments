@@ -104,3 +104,25 @@ class TestInstall(PeruTestCase):
 		)
 		install.setup()
 		self.assertFalse(frappe.db.get_value("Custom Field", name, "description"))
+
+	def test_only_version_16_can_install_it(self):
+		install.check_versions("16.55.0", "16.0.0")
+		for frappe_version, erpnext_version in (
+			("15.126.1", "16.55.0"),
+			("16.55.0", "15.125.0"),
+			("17.0.0-dev", "16.55.0"),
+			("", "16.55.0"),
+		):
+			with self.subTest(frappe=frappe_version, erpnext=erpnext_version):
+				with self.assertRaisesRegex(frappe.ValidationError, "requires"):
+					install.check_versions(frappe_version, erpnext_version)
+
+	def test_the_check_runs_before_install(self):
+		self.assertEqual(
+			frappe.get_hooks("before_install", app_name="erpnext_peru"),
+			["erpnext_peru.setup.install.before_install"],
+		)
+		import erpnext
+
+		install.before_install()  # this bench is v16
+		self.assertEqual(erpnext.__version__.split(".")[0], "16")

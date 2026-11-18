@@ -10,6 +10,8 @@ and no ERPNext core file is modified.
 NOTE = "eval:doc.is_return || doc.is_debit_note"
 PURCHASE_NOTE = "eval:['07', '08'].includes(doc.pe_comprobante_type)"
 ISSUABLE_FILTER = '[["SUNAT Comprobante Type","sales_issuable","=",1]]'
+# A note modifies a Factura or a Boleta de venta (utils/voucher.py: MODIFIABLE_TYPES).
+MODIFIABLE_FILTER = '[["SUNAT Comprobante Type","name","in",["01","03"]]]'
 
 
 def _identity_fields(insert_after: str) -> list[dict]:
@@ -173,7 +175,7 @@ CUSTOM_FIELDS = {
 			"label": "Modified Comprobante Type",
 			"fieldtype": "Link",
 			"options": "SUNAT Comprobante Type",
-			"link_filters": ISSUABLE_FILTER,
+			"link_filters": MODIFIABLE_FILTER,
 			"insert_after": "pe_debit_note_reason",
 			"depends_on": NOTE,
 			"print_hide": 1,

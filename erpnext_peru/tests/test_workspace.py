@@ -1,6 +1,6 @@
 # Copyright (c) 2026, erpnext_peru contributors
 # License: GNU General Public License v3. See license.txt
-"""The "Peru" entry in the sidebar and on the apps screen."""
+"""The "Peru" workspace and its icon on the apps screen (the home page)."""
 
 import json
 import os
@@ -20,17 +20,6 @@ class TestWorkspace(PeruTestCase):
 		self.assertEqual(self.workspace.is_hidden, 0)
 		self.assertEqual(self.workspace.module, "ERPNext Peru")
 		self.assertFalse(self.workspace.for_user)
-
-	def test_it_is_listed_in_the_sidebar(self):
-		try:
-			from frappe.desk.desktop import get_workspace_sidebar_items
-		except ImportError:
-			# Frappe v16 has no such sidebar: it builds one per module by itself, and
-			# the workspace is reached from the apps screen (test below) or /desk/peru.
-			self.skipTest("Frappe v16: the sidebar is computed per module")
-
-		pages = get_workspace_sidebar_items()["pages"]
-		self.assertIn("Peru", [page["name"] for page in pages])
 
 	def test_every_link_points_to_an_existing_doctype(self):
 		targets = [row.link_to for row in self.workspace.links if row.type == "Link"]

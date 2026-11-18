@@ -708,3 +708,81 @@ class TestMergedPosInvoices(SalesInvoiceCase):
 				invoice = self.build(names)
 				invoice.insert()
 				self.assertEqual(invoice.pe_comprobante_type, "03")
+
+
+class TestPosReturns(SalesInvoiceCase):
+	"""A return made at the point of sale: its screen has no field for the reason."""
+
+	def setUp(self):
+		super().setUp()
+		make_series("07", "BC01")
+		self.boleta = make_sales_invoice(self.dni_customer, rate=100, qty=3)
+		self.boleta.submit()
+
+	def pos_return(self, qty=None, reason=None, is_pos=1):
+		from erpnext_peru.overrides import sales_invoice
+
+		note = make_return(self.boleta, pe_credit_note_reason="07")  # a valid draft first
+		note.pe_credit_note_reason = reason
+		note.is_pos = is_pos
+		if qty is not None:
+			note.items[0].qty = note.items[0].stock_qty = -qty
+		sales_invoice.validate(note)
+		return note
+
+	def test_returning_everything_is_a_total_return(self):
+		self.assertEqual(self.pos_return().pe_credit_note_reason, "06")
+
+	def test_returning_part_is_a_return_by_item(self):
+		self.assertEqual(self.pos_return(qty=1).pe_credit_note_reason, "07")
+
+	def test_a_reason_chosen_by_the_user_is_kept(self):
+		self.assertEqual(self.pos_return(reason="01").pe_credit_note_reason, "01")
+
+	def test_returns_outside_the_point_of_sale_still_need_a_reason(self):
+		self.assertIsNone(self.pos_return(is_pos=0).pe_credit_note_reason)
+
+	def test_without_the_original_sale_it_is_a_return_by_item(self):
+		from erpnext_peru.overrides.sales_invoice import _pos_return_reason
+
+		note = frappe._dict(return_against=None, items=[])
+		self.assertEqual(_pos_return_reason(note), "07")
+
+
+class TestTransactionDeletion(SalesInvoiceCase):
+	"""ERPNext's "Delete Company Transactions" would wipe issued comprobantes."""
+
+	def check(self, company):
+		from erpnext_peru.overrides.transaction_deletion import before_submit
+
+		before_submit(frappe._dict(company=company))
+
+	def test_refused_once_a_comprobante_was_issued(self):
+		frappe.db.sql(
+			"update `tabSales Invoice` set pe_voucher_number = null where company = %s", PERU_COMPANY
+		)
+		self.check(PERU_COMPANY)  # nothing issued: allowed
+		make_sales_invoice(self.dni_customer, rate=100).submit()
+		with self.assertRaisesRegex(ComprobanteError, "cannot be deleted"):
+			self.check(PERU_COMPANY)
+
+	def test_other_countries_are_not_concerned(self):
+		self.check(FOREIGN_COMPANY)
+
+	def test_the_tool_calls_it(self):
+		hooks = frappe.get_hooks("doc_events", app_name="erpnext_peru")
+		self.assertEqual(
+			hooks["Transaction Deletion Record"]["before_submit"],
+			["erpnext_peru.overrides.transaction_deletion.before_submit"],
+		)
+
+
+class TestModifiedTypeField(PeruTestCase):
+	def test_a_note_offers_only_factura_and_boleta(self):
+		from erpnext_peru.setup.custom_fields import CUSTOM_FIELDS
+
+		expected = [["SUNAT Comprobante Type", "name", "in", ["01", "03"]]]
+		definition = next(f for f in CUSTOM_FIELDS["Sales Invoice"] if f["fieldname"] == "pe_original_type")
+		field = frappe.get_meta("Sales Invoice").get_field("pe_original_type")
+		for link_filters in (definition["link_filters"], field.link_filters):
+			self.assertEqual(frappe.parse_json(link_filters), expected)

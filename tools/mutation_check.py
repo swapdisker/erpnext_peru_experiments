@@ -159,6 +159,71 @@ M = [
 	),
 	("setup/ubigeo.py", "	if missing:", "	if False:", "b", "test_company_address"),
 	("setup/install.py", "	load_ubigeo()\n", "", "b", "test_company_address"),
+	# Review fixes of 17 November (v16 only)
+	(
+		"overrides/sales_invoice.py",
+		'		if cint(doc.get("is_pos")) and not doc.pe_credit_note_reason:',
+		"		if False:",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/sales_invoice.py",
+		"	return REASON_TOTAL_RETURN if sold and returned == sold else REASON_ITEM_RETURN",
+		"	return REASON_ITEM_RETURN",
+		"b",
+		"test_sales_invoice",
+	),
+	("overrides/transaction_deletion.py", "	if issued:", "	if False:", "b", "test_sales_invoice"),
+	(
+		"hooks.py",
+		'		"before_submit": "erpnext_peru.overrides.transaction_deletion.before_submit",\n',
+		"",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"setup/custom_fields.py",
+		'			"link_filters": MODIFIABLE_FILTER,',
+		'			"link_filters": ISSUABLE_FILTER,',
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/company.py",
+		"	disable_erpnext_default_templates(doc.name, doc.abbr)",
+		"	pass",
+		"b",
+		"test_igv",
+	),
+	(
+		"overrides/company.py",
+		'	if not frappe.db.exists("Tax Rule", {"company": doc.name, "tax_category": CATEGORY_GRAVADO}):\n		return',
+		"	if False:\n		return",
+		"b",
+		"test_igv",
+	),
+	(
+		"hooks.py",
+		'		"on_update": "erpnext_peru.overrides.company.on_update",\n',
+		"",
+		"b",
+		"test_igv",
+	),
+	(
+		"setup/install.py",
+		"		if major != str(SUPPORTED_MAJOR_VERSION):",
+		"		if False:",
+		"b",
+		"test_install",
+	),
+	(
+		"hooks.py",
+		'before_install = "erpnext_peru.setup.install.before_install"\n',
+		"",
+		"b",
+		"test_install",
+	),
 	("hooks.py", ', "Address": "public/js/address.js"}', "}", "b", "test_company_address"),
 	(
 		"overrides/address.py",
@@ -512,33 +577,41 @@ def purge():
 	)
 
 
+# Names of failing tests. unittest prints "FAIL: test_x (...)"; Frappe v16's
+# runner prints " FAIL  test_x (...)" and a summary line "✖  test_x", in colour.
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+_FAILING_TEST_RE = re.compile(r"^\s*(?:FAIL|ERROR):?\s+(test\w+)|✖\s+(test\w+)", re.M)
+
+
+def failing_tests(output: str) -> list[str]:
+	text = _ANSI_RE.sub("", output)
+	names = [a or b for a, b in _FAILING_TEST_RE.findall(text)]
+	if not names and re.search(r"^FAILED \(", text, re.M):
+		names = ["(unnamed)"]  # the summary says so even if no name could be read
+	return list(dict.fromkeys(names))
+
+
 def run(runner, module, bench, site):
+	"""Run the module's tests. Returns (names of the failing tests, finished, output).
+
+	``finished`` is False when the test run itself broke (no summary line):
+	that says nothing about the mutant and must not count as killing it.
+	"""
 	purge()
 	env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+	python = os.path.join(bench, "env", "bin", "python")
 	if runner == "u":
-		command = [
-			os.path.join(bench, "env", "bin", "python"),
-			"-m",
-			"unittest",
-			f"erpnext_peru.tests.{module}",
-		]
+		command = [python, "-m", "unittest", f"erpnext_peru.tests.{module}"]
 		cwd = os.path.dirname(APP)
 	else:
-		command = [
-			"bench",
-			"--site",
-			site,
-			"run-tests",
-			"--app",
-			"erpnext_peru",
-			"--module",
-			f"erpnext_peru.tests.{module}",
-		]
-		cwd = bench
+		# Frappe's own entry point, as `bench` calls it: works on any bench layout.
+		command = [python, "-m", "frappe.utils.bench_helper", "frappe", "--site", site, "run-tests"]
+		command += ["--app", "erpnext_peru", "--module", f"erpnext_peru.tests.{module}"]
+		cwd = os.path.join(bench, "sites")
 	result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, env=env)
 	output = result.stdout + result.stderr
-	failed = "FAILED" in output or ("Error" in output and "OK" not in output.splitlines()[-5:])
-	return failed, output
+	finished = bool(re.search(r"^Ran \d+ tests? in ", output, re.M))
+	return failing_tests(output), finished, output
 
 
 def main():
@@ -565,19 +638,26 @@ def main():
 		with open(path, "w", encoding="utf-8") as handle:
 			handle.write(source.replace(old, new))
 		try:
-			killed, output = run(runner, module, bench, args.site)
+			failing, finished, output = run(runner, module, bench, args.site)
 		finally:
 			with open(path, "w", encoding="utf-8") as handle:
 				handle.write(source)
-		failing = re.findall(r"^(?:FAIL|ERROR): (\w+)", output, re.M)
+		if failing:
+			verdict = "killed  "
+		elif finished:
+			verdict = "SURVIVED"
+		else:
+			# The tests did not run (import error, bench problem...): not a kill.
+			verdict = "BROKEN  "
+			print(output[-2000:])
 		print(
-			f"[{index:2d}] {'killed  ' if killed else 'SURVIVED'} {os.path.basename(filename):26s} "
+			f"[{index:2d}] {verdict} {os.path.basename(filename):26s} "
 			f"{old.strip()[:48]!r:52s} -> {len(failing)} failing: {', '.join(failing[:3])}",
 			flush=True,
 		)
-		survived += 0 if killed else 1
+		survived += 0 if failing else 1
 	purge()
-	print("SURVIVED:", survived)
+	print("SURVIVED or BROKEN:", survived)
 	return 1 if survived else 0
 
 

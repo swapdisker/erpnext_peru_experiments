@@ -244,7 +244,9 @@ class TestIgvSetup(IgvCase):
 
 	def test_rounding_warning(self):
 		frappe.db.set_single_value("System Settings", "rounding_method", "Banker's Rounding")
-		self.assertEqual(len(setup_igv(PCGE_COMPANY).warnings), 1)
+		[warning] = setup_igv(PCGE_COMPANY).warnings
+		self.assertIn("Banker's Rounding", warning)
+		self.assertNotIn("<", warning)  # plain text: the form escapes it
 		frappe.db.set_single_value("System Settings", "rounding_method", "Commercial Rounding")
 		self.assertEqual(setup_igv(PCGE_COMPANY).warnings, [])
 
@@ -409,3 +411,42 @@ class TestPurchasesWithIgv(IgvCase):
 			(pcge_account("40111"), sale.name, purchase.name),
 		)[0][0]
 		self.assertEqual(flt(balance, 2), 72.00)
+
+
+class TestErpnextDefaultTemplate(IgvCase):
+	"""ERPNext recreates its 16% "Peru Tax" template in some cases; it must stay disabled."""
+
+	def make_peru_tax(self):
+		name = f"Peru Tax - {PCGE_ABBR}"
+		frappe.delete_doc_if_exists("Sales Taxes and Charges Template", name, force=True)
+		doc = frappe.get_doc(
+			{
+				"doctype": "Sales Taxes and Charges Template",
+				"title": "Peru Tax",
+				"company": PCGE_COMPANY,
+				"taxes": [
+					{
+						"charge_type": "On Net Total",
+						"account_head": pcge_account("40111"),
+						"rate": 16,
+						"description": "VAT @ 16.0",
+					}
+				],
+			}
+		)
+		# as ERPNext inserts it (setup_wizard/operations/taxes_setup.py)
+		doc.flags.ignore_validate = doc.flags.ignore_mandatory = doc.flags.ignore_links = True
+		doc.insert(ignore_permissions=True)
+		return name
+
+	def test_saving_the_company_disables_it_again(self):
+		setup_igv(PCGE_COMPANY)
+		name = self.make_peru_tax()
+		frappe.get_doc("Company", PCGE_COMPANY).save()
+		self.assertEqual(frappe.db.get_value("Sales Taxes and Charges Template", name, "disabled"), 1)
+
+	def test_left_alone_before_the_igv_setup(self):
+		frappe.db.delete("Tax Rule", {"company": PCGE_COMPANY})
+		name = self.make_peru_tax()
+		frappe.get_doc("Company", PCGE_COMPANY).save()
+		self.assertEqual(frappe.db.get_value("Sales Taxes and Charges Template", name, "disabled"), 0)

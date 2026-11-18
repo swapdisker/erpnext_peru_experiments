@@ -7,14 +7,10 @@ created once and committed; every test rolls its own changes back.
 """
 
 import frappe
+from frappe.tests import IntegrationTestCase
 from frappe.utils import today
 
 from erpnext_peru.utils.identity import ruc_check_digit
-
-try:  # Frappe v15
-	from frappe.tests.utils import FrappeTestCase
-except ImportError:  # pragma: no cover - Frappe v16+
-	from frappe.tests import IntegrationTestCase as FrappeTestCase
 
 PERU_COMPANY = "_Test Peru SAC"
 PERU_ABBR = "_TPE"
@@ -43,7 +39,7 @@ def make_ruc(body: int | str, prefix: str = "20") -> str:
 COMPANY_RUC = make_ruc(60000001)
 
 
-class PeruTestCase(FrappeTestCase):
+class PeruTestCase(IntegrationTestCase):
 	"""Creates the shared fixtures and isolates every test with a rollback."""
 
 	@classmethod
@@ -65,42 +61,33 @@ def prepare_site():
 	"""Bring a fresh site to the state the fixtures below need: setup wizard done.
 
 	This is the app's ``before_tests`` hook. ``ensure_fixtures`` calls it as well,
-	because Frappe v16 does not run that hook for every kind of test class.
-	ERPNext v15 has a function for this; v16 dropped it, so there the wizard is
-	run here with the same answers.
+	because Frappe does not run that hook for every kind of test class. ERPNext
+	no longer ships a function for this, so the wizard is run here.
 	"""
 	if frappe.db.exists("Warehouse Type", "Transit"):  # created by the wizard
 		return
-	try:
-		from erpnext.setup.utils import before_tests as erpnext_before_tests
-	except ImportError:
-		erpnext_before_tests = None
+	from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 
-	if erpnext_before_tests:
-		erpnext_before_tests()
-	else:
-		from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
-
-		year = frappe.utils.now_datetime().year
-		setup_complete(
-			{
-				"currency": "USD",
-				"full_name": "Test User",
-				"company_name": "Wind Power LLC",
-				"timezone": "America/New_York",
-				"company_abbr": "WP",
-				"industry": "Manufacturing",
-				"country": "United States",
-				"fy_start_date": f"{year}-01-01",
-				"fy_end_date": f"{year}-12-31",
-				"language": "english",
-				"company_tagline": "Testing",
-				"email": "test@erpnext.com",
-				"password": "test",
-				"chart_of_accounts": "Standard",
-			}
-		)
-		frappe.db.commit()
+	year = frappe.utils.now_datetime().year
+	setup_complete(
+		{
+			"currency": "USD",
+			"full_name": "Test User",
+			"company_name": "Wind Power LLC",
+			"timezone": "America/New_York",
+			"company_abbr": "WP",
+			"industry": "Manufacturing",
+			"country": "United States",
+			"fy_start_date": f"{year}-01-01",
+			"fy_end_date": f"{year}-12-31",
+			"language": "english",
+			"company_tagline": "Testing",
+			"email": "test@erpnext.com",
+			"password": "test",
+			"chart_of_accounts": "Standard",
+		}
+	)
+	frappe.db.commit()
 	if not frappe.db.exists("Warehouse Type", "Transit"):
 		raise RuntimeError("The ERPNext setup wizard did not complete; the test site is not usable.")
 

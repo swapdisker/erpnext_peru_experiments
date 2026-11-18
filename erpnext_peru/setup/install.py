@@ -5,6 +5,7 @@ import json
 import os
 
 import frappe
+from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from erpnext_peru.setup.constraints import ensure_constraints
@@ -18,6 +19,28 @@ CATALOGUE_DOCTYPES = {
 	"debit_note_reasons": "SUNAT Debit Note Reason",
 	"igv_affectation_types": "SUNAT IGV Affectation Type",
 }
+
+
+# The app is built and tested on this major version of Frappe and ERPNext only.
+SUPPORTED_MAJOR_VERSION = 16
+
+
+def check_versions(frappe_version: str, erpnext_version: str):
+	"""Refuse to install on any other major version: bench only warns about it."""
+	for app, version in (("Frappe", frappe_version), ("ERPNext", erpnext_version)):
+		major = str(version or "").split(".")[0]
+		if major != str(SUPPORTED_MAJOR_VERSION):
+			frappe.throw(
+				_("ERPNext Peru requires {0} version {1}. This bench has version {2}.").format(
+					app, SUPPORTED_MAJOR_VERSION, version or "?"
+				)
+			)
+
+
+def before_install():
+	import erpnext
+
+	check_versions(frappe.__version__, erpnext.__version__)
 
 
 def after_install():

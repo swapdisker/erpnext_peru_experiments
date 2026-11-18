@@ -6,8 +6,8 @@ app_email = ""
 app_license = "GPL-3.0"
 required_apps = ["erpnext"]
 
-# The icon on the apps screen. "/app/peru" also works on Frappe v16, which
-# redirects it to the new /desk address.
+# The icon on the apps screen (the home page). Frappe redirects "/app/peru" to
+# the workspace's /desk address.
 add_to_apps_screen = [
 	{
 		"name": app_name,
@@ -18,6 +18,7 @@ add_to_apps_screen = [
 	}
 ]
 
+before_install = "erpnext_peru.setup.install.before_install"
 after_install = "erpnext_peru.setup.install.after_install"
 after_migrate = "erpnext_peru.setup.install.after_migrate"
 
@@ -29,6 +30,7 @@ doctype_js = {"Company": "public/js/company.js", "Address": "public/js/address.j
 doc_events = {
 	"Company": {
 		"validate": "erpnext_peru.overrides.company.validate",
+		"on_update": "erpnext_peru.overrides.company.on_update",
 	},
 	"Customer": {
 		"validate": "erpnext_peru.overrides.party.validate",
@@ -43,6 +45,10 @@ doc_events = {
 		"validate": "erpnext_peru.overrides.sales_invoice.validate",
 		"before_submit": "erpnext_peru.overrides.sales_invoice.before_submit",
 		"on_trash": "erpnext_peru.overrides.sales_invoice.on_trash",
+	},
+	# ERPNext's "Delete Company Transactions"
+	"Transaction Deletion Record": {
+		"before_submit": "erpnext_peru.overrides.transaction_deletion.before_submit",
 	},
 	"Purchase Invoice": {
 		"validate": "erpnext_peru.overrides.purchase_invoice.validate",
