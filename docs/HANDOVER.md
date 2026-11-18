@@ -418,7 +418,8 @@ refuses to install on any other major version. Bench itself only warns when the 
 - **No roles or permissions of its own.** The form actions require System Manager or Accounts
   Manager; the catalogue masters are readable by everyone. The proposal's Migration User /
   Migration Approver roles do not exist yet.
-- **The repository is marked "do not use"** in its README, at the owner's request.
+- **The README states the status plainly:** early development, not reviewed by an accountant,
+  not used in production, nothing sent to SUNAT yet.
 
 ## 9. State of the screens
 
