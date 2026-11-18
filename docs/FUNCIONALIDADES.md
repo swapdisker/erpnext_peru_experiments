@@ -13,7 +13,7 @@ variar según la versión.
 ## Contenido
 
 1. [Dónde se aplica](#1-dónde-se-aplica)
-2. [La entrada Perú en la barra lateral](#2-la-entrada-perú-en-la-barra-lateral)
+2. [El icono y el espacio de trabajo Perú](#2-el-icono-y-el-espacio-de-trabajo-perú)
 3. [Documentos de identidad de clientes y proveedores](#3-documentos-de-identidad-de-clientes-y-proveedores)
 4. [RUC de la compañía](#4-ruc-de-la-compañía)
 5. [Direcciones y Ubigeo](#5-direcciones-y-ubigeo)
@@ -32,18 +32,22 @@ variar según la versión.
 - Las reglas de los comprobantes se aplican solo a las compañías cuyo **país es Perú**. Las
   compañías de otros países en el mismo sitio no se ven afectadas.
 - Las **facturas de apertura** ("Is Opening Entry" = Sí) están exentas de esas reglas.
-- También lo están las **facturas que se generan al cerrar un turno del punto de venta**
-  (ERPNext agrupa las POS Invoices del turno en una sola factura de venta): no reciben tipo ni
-  número de comprobante. La emisión de comprobantes en el punto de venta aún no está incluida.
+- **Punto de venta.** Cada venta en caja es una factura de venta (lo predeterminado en la
+  Configuración POS de ERPNext v16), así que es un comprobante como cualquier otro: recibe tipo,
+  serie y número al validarse, y se aplica la regla de los S/ 700. Una devolución hecha en caja
+  es una nota de crédito cuyo motivo se llena solo: `06` (devolución total) cuando vuelven
+  completos todos los artículos de la venta, `07` (devolución por ítem) en otro caso. Si la
+  Configuración POS se cambia a POS Invoices, la factura que ERPNext genera al cerrar el turno
+  queda exenta: no recibe tipo ni número.
 - Las reglas de documentos de identidad se aplican a todo cliente o proveedor que tenga un
   documento de identidad registrado. Si no lo tiene, no se le exige nada.
 - La interfaz está disponible en español y en inglés.
 
-## 2. La entrada Perú en la barra lateral
+## 2. El icono y el espacio de trabajo Perú
 
-En ERPNext v15 es una entrada de la barra lateral. En v16 es un icono **Perú** en la pantalla de
-aplicaciones (la página de inicio), visible solo para los usuarios del escritorio; la barra
-lateral que lo acompaña la arma Frappe.
+Un icono **Perú** en la pantalla de aplicaciones (la página de inicio), visible solo para los
+usuarios del escritorio. Abre el espacio de trabajo; la barra lateral que lo acompaña la arma
+Frappe.
 
 Un espacio de trabajo **Perú** con:
 
@@ -141,7 +145,8 @@ Se permite una Boleta para un cliente que tiene RUC, con un aviso.
   de débito es 08, una venta normal es 01 o 03.
 - La serie debe tener cuatro letras o dígitos y empezar con `F` en una Factura y con `B` en una
   Boleta. La serie de una nota empieza con la letra del comprobante que modifica.
-- Una nota solo puede modificar una Factura o una Boleta.
+- Una nota solo puede modificar una Factura o una Boleta; el campo «Tipo de comprobante que
+  modifica» solo ofrece esas dos.
 
 ### Reglas al validar
 
@@ -168,7 +173,9 @@ soles.
 - Los campos del comprobante no se pueden cambiar.
 - Un documento anulado conserva su número. Al corregirlo ("Amend") se crea un documento nuevo
   con un número nuevo.
-- Un documento que tiene número de comprobante no se puede eliminar.
+- Un documento que tiene número de comprobante no se puede eliminar. Cuando una compañía ya
+  emitió algún comprobante, el botón **Eliminar transacciones** de la compañía se rechaza con
+  un mensaje: borraría las facturas y las series con ellas.
 
 La anulación en sí no está restringida: vea la [sección 14](#14-lo-que-no-incluye).
 
@@ -283,7 +290,9 @@ cuenta `40111` (aplique primero el PCGE). Se crean:
   al debe en las compras, de modo que el saldo de la cuenta es el IGV por pagar.
 - Las plantillas de 0% no generan asiento. Existen para que el documento indique cómo se trata.
 - Cada plantilla de ventas lleva su código del catálogo 07 de SUNAT (10, 20, 30, 40).
-- Se deshabilita la plantilla "Peru Tax" de 16% que ERPNext crea por su cuenta.
+- Se deshabilita la plantilla "Peru Tax" de 16% que ERPNext crea por su cuenta. Si ERPNext la
+  vuelve a crear (por ejemplo, tras reemplazar el plan de cuentas), al guardar la compañía se
+  deshabilita de nuevo.
 - Si se ejecuta de nuevo, no crea nada ni deshace cambios locales.
 - Si el sitio redondea los medios céntimos al dígito par, se muestra un aviso.
 
@@ -340,4 +349,4 @@ que la configuración del PCGE no define. Vea [HANDOVER.md](HANDOVER.md), secci�
 - Tipo de cambio diario de SUNAT.
 - La lista ampliada de tipos de documento para compras.
 - Uso con datos reales: todo se revisó en sitios de prueba con compañías, clientes e importes
-  inventados, en ERPNext v15 y v16.
+  inventados, en ERPNext v16.

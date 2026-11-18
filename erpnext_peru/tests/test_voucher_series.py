@@ -115,6 +115,10 @@ class TestVoucherSeries(PeruTestCase):
 		again = make_sales_invoice(customer)
 		with self.assertRaises(frappe.ValidationError) as ctx:
 			again.submit()
+		# The app's own check, not the unique index behind it (constraints.py),
+		# which would refuse the number too, with a database message.
+		self.assertNotIsInstance(ctx.exception, frappe.UniqueValidationError)
+		self.assertIn("already exists (" + invoice.name + ")", str(ctx.exception))
 		self.assertIn("F001-00000001", str(ctx.exception))
 
 	def test_enabled_series_lookup(self):

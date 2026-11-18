@@ -9,7 +9,7 @@ choices that still need an accountant.
 ## Contents
 
 1. [Where it applies](#1-where-it-applies)
-2. [The Peru entry in the sidebar](#2-the-peru-entry-in-the-sidebar)
+2. [The Peru icon and workspace](#2-the-peru-icon-and-workspace)
 3. [Identity documents of customers and suppliers](#3-identity-documents-of-customers-and-suppliers)
 4. [Company RUC](#4-company-ruc)
 5. [Addresses and Ubigeo](#5-addresses-and-ubigeo)
@@ -28,17 +28,20 @@ choices that still need an accountant.
 - The invoice rules apply only to companies whose **country is Peru**. Companies of other
   countries on the same site are left untouched.
 - **Opening invoices** ("Is Opening Entry" = Yes) are exempt from the invoice rules.
-- **Invoices created when a point-of-sale shift is closed** (ERPNext merges the shift's POS
-  Invoices into one Sales Invoice) are exempt too: they get no comprobante type or number.
-  Issuing comprobantes at the point of sale is not included yet.
+- **Point of sale.** Each sale at the counter is a Sales Invoice (the default in ERPNext v16's
+  POS Settings), so it is a comprobante like any other: it gets a type, series and number on
+  submission, and the S/ 700 rule applies. A return made at the counter is a credit note whose
+  reason is filled in for you: `06` (total return) when every item of the sale comes back in
+  full, `07` (return by item) otherwise. If POS Settings are switched to POS Invoices, the
+  invoice ERPNext builds when the shift is closed is exempt instead: it gets no type or number.
 - The identity document rules apply to any customer or supplier that has an identity document
   filled in. A party without one is left untouched.
 - The interface is available in English and Spanish.
 
-## 2. The Peru entry in the sidebar
+## 2. The Peru icon and workspace
 
-On ERPNext v15 it is an entry in the sidebar. On v16 it is a **Peru** icon on the apps screen
-(the home page), shown to desk users only; the sidebar beside it is built by Frappe.
+A **Peru** icon on the apps screen (the home page), shown to desk users only. It opens the
+workspace; the sidebar beside it is built by Frappe.
 
 A **Peru** workspace with:
 
@@ -132,7 +135,8 @@ A Boleta for a customer who has a RUC is allowed, with a warning.
   note is 08, a plain invoice is 01 or 03.
 - The series must have four letters or digits and start with `F` for a Factura and `B` for a
   Boleta. A note's series starts with the letter of the comprobante it modifies.
-- A note can only modify a Factura or a Boleta.
+- A note can only modify a Factura or a Boleta; the Modified Comprobante Type field offers only
+  those two.
 
 ### Rules checked on submission
 
@@ -157,7 +161,9 @@ to soles.
 
 - The comprobante fields cannot be changed.
 - A cancelled invoice keeps its number. Amending it creates a new invoice with a new number.
-- An invoice that has a voucher number cannot be deleted.
+- An invoice that has a voucher number cannot be deleted. Once a company has issued
+  any comprobante, the **Delete Transactions** button of the Company form is refused with a
+  message: it would delete the invoices and the voucher series with them.
 
 Cancellation itself is not restricted: see [section 14](#14-what-is-not-included).
 
@@ -267,7 +273,8 @@ On the Company form, menu **Peru → Set Up IGV**. The company must have account
   purchases, so the balance of the account is the IGV payable.
 - The 0% templates post nothing. They exist so that the document states how it is treated.
 - Each sales template carries its SUNAT catalogue 07 code (10, 20, 30, 40).
-- The "Peru Tax" template at 16% that ERPNext creates on its own is disabled.
+- The "Peru Tax" template at 16% that ERPNext creates on its own is disabled. If ERPNext
+  creates it again (for example after the chart is replaced), saving the company disables it.
 - Running it again creates nothing and does not undo local changes.
 - If the site rounds half-céntimos to the even digit, a warning says so.
 
@@ -323,4 +330,4 @@ define. See [HANDOVER.md](HANDOVER.md), section 7.
 - The daily SUNAT exchange rate.
 - The wider list of document types for purchases.
 - Data for real use: everything was checked on test sites with made-up companies, customers and
-  amounts, on ERPNext v15 and v16.
+  amounts, on ERPNext v16.

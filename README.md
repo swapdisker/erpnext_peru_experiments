@@ -17,8 +17,8 @@
 > Puede tener errores y reglas tributarias incorrectas, y ningún contador lo ha revisado. No lo
 > instale en un sitio con datos reales.
 
-Peruvian localization for [ERPNext](https://github.com/frappe/erpnext) v15, as a separate
-Frappe app. Nothing in ERPNext core is modified.
+Peruvian localization for [ERPNext](https://github.com/frappe/erpnext) v16 (Frappe and
+ERPNext 16, Python 3.14), as a separate Frappe app. Nothing in ERPNext core is modified.
 
 **Status:** prototype, v0.2.0. Not reviewed by an accountant.
 
@@ -30,7 +30,10 @@ Frappe app. Nothing in ERPNext core is modified.
 - **Supplier documents on purchases:** type, series and number, with duplicate checks.
 - **Chart of accounts:** the PCGE Modificado 2019 (MEF), applied to a company in one action.
 - **IGV:** 18% and 0% tax templates for sales and purchases.
-- **SUNAT catalogues** 01, 06, 07, 09 and 10, and a **Peru** entry in the sidebar.
+- **Addresses:** the Ubigeo list of all 1,893 districts (INEI), with accents.
+- **Point of sale:** each counter sale is a numbered Boleta or Factura; counter returns get
+  their credit note reason.
+- **SUNAT catalogues** 01, 06, 07, 09 and 10, and a **Peru** icon on the apps screen.
 
 It does not yet include electronic invoicing, SIRE registers or the CONCAR import tools.
 
@@ -42,12 +45,13 @@ It does not yet include electronic invoicing, SIRE registers or the CONCAR impor
 | [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md) | Todo lo que hace la app, en español |
 | [docs/HANDOVER.md](docs/HANDOVER.md) | Design, verification, open decisions and next steps, for developers and the accountant |
 | [tools/pcge/README.md](tools/pcge/README.md) | Where the chart of accounts data comes from |
+| [tools/ubigeo/README.md](tools/ubigeo/README.md) | Where the Ubigeo list comes from |
 
 ## Install
 
 ```bash
-bench get-app <repository-url>
-bench --site <site> install-app erpnext_peru
+bench get-app <repository-url>                # on a Frappe / ERPNext v16 bench
+bench --site <site> install-app erpnext_peru  # refused on any other version
 ```
 
 Then follow "First-time setup" in [docs/FEATURES.md](docs/FEATURES.md#first-time-setup).

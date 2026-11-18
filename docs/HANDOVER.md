@@ -13,7 +13,8 @@ who reviews it.
   Those choices are in section 6 and must be confirmed before real use.
 - **Its screens are almost untested.** The logic is tested through code against a real ERPNext
   site; forms were barely opened in a browser (section 9).
-- **Tested on ERPNext v15 and v16** by the automated tests; the screens only on v15.
+- **ERPNext v16 only** (Frappe and ERPNext 16, Python 3.14). Support for v15 was dropped on
+  17 November; installing on another version is refused.
 
 What it does, in one paragraph: it validates Peruvian identity documents on customers and
 suppliers; adds comprobante type, series and a gapless number to sales invoices and enforces
@@ -28,7 +29,7 @@ the user's side.
 
 | Proposal item | State |
 |---|---|
-| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v15) jobs pass. The v16 job (Python 3.14, MariaDB 11.8) passes too. |
+| Step 2 — custom app, GPL-3.0, tests | Built. CI on GitHub: unit and integration (ERPNext v16, Python 3.14, MariaDB 11.8) jobs pass. |
 | Step 3 — PCGE 2019 chart, apply / merge, defaults | Built and tested. Account types and defaults await the accountant. |
 | Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
 | Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
@@ -40,7 +41,7 @@ the user's side.
 | Step 4 — destination entries (6 → 9 / 79) | Not started. |
 | Step 5 — e-invoicing (UBL, provider, CDR) | Not started. |
 | Step 6 — print format | Only the amount-in-words function. |
-| Step 7 — tests on v15 and v16, documentation | Tests pass on v15 and v16; the main screens were checked by hand on both (section 9). Feature descriptions in English and Spanish. |
+| Step 7 — tests on v15 and v16, documentation | Tests passed on both; the main screens were checked by hand on both (section 9). v15 was then dropped at the owner's request: v16 only. Feature descriptions in English and Spanish. |
 | CONCAR toolkit, reconciliation, SIRE | Not started. |
 | Annexure A scenarios with an automated test | CoA-UC-01..03, CoA-CC-01..04, MD-UC-01..03, MD-CC-01..04, TX-UC-01..03, TX-CC-01..03 (20 of 81). Test names carry the ID. |
 
@@ -185,13 +186,22 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **303 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
-  on two sites, one of them a fresh install, and in CI on GitHub (v15 and v16).
-- **Mutation check: 94 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **316 automated tests** (237 against a site, 79 without one), all passing on Frappe 16.56.0 /
+  ERPNext 16.55.0 / MariaDB 10.11 on the test machine, and in CI on GitHub (Python 3.14,
+  MariaDB 11.8). Until v15 was dropped they also passed on Frappe 15.126.1 / ERPNext 15.125.0.
+- **Mutation check: 101 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
-  has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November, 3 for the fixes from the screen check: the refusal to replace a chart with IGV set up, the apps-screen icon for website users, and clearing an obsolete field description on migrate, 8 for the Ubigeo loader and the address form). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
-  was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
+  has ledger entries" guard removed, the version check removed, and so on. The list is
+  `tools/mutation_check.py`. On 17 November it was run end to end on v16: 99 made a test fail
+  and 2 did not, because two tests still passed for the wrong reason. Removing the app's own
+  check for a voucher number that already exists went unnoticed because the unique index
+  refused the number anyway; the test now asks for the app's message. Reading the PCGE job
+  state without `expires=True` went unnoticed because on v16 a value written in the same
+  process is always seen; the new test writes the state the way the worker does, from outside
+  the request. Both are now caught. The script was also corrected on that day: on v16 it had
+  been counting a test run that never started as a caught bug. The test machine runs MariaDB
+  10.11, so the two lines that switch the snapshot check off and on (section 7) are exercised
+  only by the CI job on MariaDB 11.8.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
   was refused, the worker created 1,774 accounts in about 30 seconds and the state read "done".
@@ -210,14 +220,13 @@ Not shipped, because no official source could be confirmed or reached:
 
 ### Not verified
 
-- **ERPNext v16 in CI and on the test machine** passes the suite (Python 3.14, MariaDB 11.8 in
-  CI; Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11 locally): 303 tests, 1 skipped, the one
-  for the v15 sidebar. The screens were also checked on a v16 site (section 9).
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
   machine: it stops while creating its own fixtures, identically on a site without this app.
   That standard behaviour is unaffected rests on this app's tests that non-Peruvian companies
   are left untouched. Run ERPNext's suite in CI before a release.
 - **PCGE account names**, line by line against the PDF, by a person.
+- **The refusal of "Delete Transactions"** is covered by tests only. It was not tried on the
+  screen, because if it failed the tool would delete the test site's data.
 - **Anything with real data.** All test data is synthetic.
 
 ## 6. Decisions awaiting the accountant
@@ -323,6 +332,16 @@ Found while building. Some are settings to change, some are traps.
 15. **A migrate does not remove a custom-field property that was dropped from the definition.**
     The voucher number kept an old English description on upgraded sites. Clear a property by
     setting it to `""` (a test now compares every description on the site with the definition).
+16. **"Delete Transactions" on the Company form deletes with plain SQL.** It skips every document's
+    `on_trash`, so the rule that an invoice with a voucher number cannot be deleted does not
+    apply, and it also deletes the company's SUNAT Voucher Series (any DocType with a company
+    field). A series could then start again from 1 and reuse numbers SUNAT already has. The app
+    refuses the tool for a Peruvian company that has issued any comprobante
+    (`overrides/transaction_deletion.py`); a company that never issued one can still be emptied.
+17. **ERPNext recreates its 16% "Peru Tax".** When a company's country is changed, or the
+    company is saved while it has no accounts, ERPNext creates the template again if it no
+    longer exists (replacing the chart deletes it). Once IGV is set up, saving the company
+    disables it again (`overrides/company.py: on_update`).
 
 ### Differences found on v16
 
@@ -354,20 +373,30 @@ in production:
 - **`/app/...` addresses redirect to `/desk/...`.** Nothing in the app depends on either.
 - **`erpnext.setup.utils.before_tests` is gone.** A fresh v16 test site was never taken through
   the setup wizard, and creating a company failed ("Could not find Warehouse Type: Transit").
-  The app's own `tests/utils.py: prepare_site` now does it on both versions.
+  The app's own `tests/utils.py: prepare_site` now runs the wizard.
+
+Since 17 November the app supports v16 only: the v15 branches in the tests (the old test base
+class, the v15 sidebar test, ERPNext's `before_tests`) are gone, and a `before_install` hook
+refuses to install on any other major version. Bench itself only warns when the versions in
+`pyproject.toml` do not match, so the hook is what enforces it.
 
 ## 8. Known gaps and risks
 
 - **Cancellation is not restricted.** A submitted Factura can be cancelled in ERPNext. Under
   SUNAT rules that takes a comunicación de baja or a credit note. It belongs with e-invoicing.
-- **Point of sale has no comprobantes.** Closing a POS shift merges its sales into one Sales
-  Invoice per customer, usually the walk-in customer, and the returns into credit notes
-  without a reason. That invoice is not a comprobante (each sale at the counter needs its
-  own), so the app leaves it alone: it gets no type and no number. Before this was handled,
-  closing a shift above S/ 700 failed. Issuing a Boleta per POS sale, or the SUNAT daily
-  summary, is still to be designed. A merged invoice is recognised only when every item comes
-  from a submitted POS Invoice, so setting `is_consolidated` through the API does not bypass
-  the rules.
+- **Point of sale.** On v16 POS Settings' "Invoice Type" is "Sales Invoice" by default, so
+  every sale at the counter is a Sales Invoice with "Include Payment (POS)" ticked and goes
+  through the same rules as any other: it becomes a Boleta (or a Factura for a customer with
+  RUC), takes the next number of the series, and a Boleta above S/ 700 needs the customer's
+  document. A return made at the counter gets credit note reason 06 (total return) when every
+  item of the sale comes back in full and 07 (return by item) otherwise; the cashier has no
+  field for it (`overrides/sales_invoice.py: _pos_return_reason`). What remains is the
+  e-invoicing side: sending each Boleta, or the SUNAT daily summary. If POS Settings are
+  switched to "POS Invoice", closing a shift merges its sales into one Sales Invoice per
+  customer; that invoice is not a comprobante (each sale needs its own), so the app leaves it
+  alone: no type, no number. It is recognised only when every item comes from a submitted POS
+  Invoice, so setting `is_consolidated` through the API does not bypass the rules. That mode
+  issues no comprobantes at all and should not be used for Peruvian companies until it does.
 - **Unique indexes are created on migrate, unless the data already has duplicates.** Then the
   index is skipped, the duplicates are listed in the migrate output and the Error Log, and the
   next migrate tries again; the application's check still guards new records. On a large
@@ -420,6 +449,13 @@ Checked by hand on two Frappe Cloud sites, Spanish interface, with made-up data:
   mandatory in the browser.
 - No JavaScript errors in the browser console.
 - **v16 only:** the Peru icon on the apps screen opens the workspace, with its shortcuts and cards.
+- **Point of sale** (v16, after v15 was dropped): a POS profile with the IGV template and cash;
+  a sale of S/ 1,180 to the walk-in customer without a document was refused at "Complete
+  order" with the Spanish message; sales of S/ 236 and S/ 118 became B001-00000001 and
+  B001-00000002. From "Recent orders", returning all of the S/ 118 sale gave BC01-00000001
+  with reason 06, and returning 1 of the 2 units of the other gave BC01-00000002 with reason
+  07; both name the Boleta they modify. On a new return, "Tipo de comprobante que modifica"
+  offers only Factura and Boleta.
 
 Found on screen and fixed: the voucher series showed as a second "Secuencia" next to ERPNext's
 naming series; drafts showed "Número 0"; catalogue lists showed the code and "enabled" twice;
@@ -428,14 +464,14 @@ with an ERPNext error; v16 had no way to the workspace; an obsolete English desc
 under the voucher number.
 
 Not seen: the print view (there is no print format), debit notes, foreign-currency invoices,
-point of sale, and anything on a phone-sized screen.
+a POS shift closing, and anything on a phone-sized screen.
 
 ## 10. Working on it
 
 ### Set up
 
 ```bash
-bench get-app <repository-url>              # ERPNext v15 bench
+bench get-app <repository-url>              # Frappe / ERPNext v16 bench, Python 3.14
 bench new-site test.localhost               # a site used ONLY for tests
 bench --site test.localhost install-app erpnext erpnext_peru
 bench --site test.localhost set-config allow_tests true
@@ -458,15 +494,16 @@ python -m unittest erpnext_peru.tests.test_identity erpnext_peru.tests.test_vouc
 
 Things to know:
 
-- **The first run is slower.** It runs ERPNext's setup wizard (the `before_tests` hook
-  delegates to ERPNext's) and creates three companies that stay on the site: `_Test Peru SAC`
+- **The first run is slower.** It runs the setup wizard (the app's `before_tests` hook,
+  `tests/utils.py: prepare_site`) and creates three companies that stay on the site: `_Test Peru SAC`
   (standard chart), `_Test Foreign Inc` (not Peru) and `_Test PCGE SAC` (PCGE and IGV applied).
 - **Tests roll back; fixtures and the concurrency tests commit.** The concurrency tests open
   several database connections, use their own series (`FZ9…`) and clean up after themselves.
 - **Never run the tests on a site with real data.**
 - **Mutation check:** `python tools/mutation_check.py --bench <bench> --site <test site>`.
-  It edits source files while it runs and restores them. When a test is added for a new
-  rule, add a mutant for it.
+  It edits source files while it runs and restores them, and reports each mutant as killed
+  (with the failing tests), SURVIVED, or BROKEN (the tests did not run). When a test is added
+  for a new rule, add a mutant for it.
 - **Lint:** `ruff check .` and `ruff format .` (settings in `pyproject.toml`, tabs).
 - **Translations:** every message and label must have a row in `translations/es.csv`;
   `test_translations.py` fails otherwise, and also on stale rows.
@@ -529,25 +566,21 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 
 ## 12. Suggested order
 
-1. **Click through the screens** on a v15 site, starting with the "Perú" menu. Half a day,
-   and it removes the largest unknown.
-2. **Decide on v16.** All CI jobs are green. For v16 the desk entry and a click-through are
-   missing (section 5, "Not verified"), and the counter lock on MariaDB 11.8 deserves a review
-   (section 7, "Differences found on v16").
-3. **Accountant session on section 6.** Decisions 10–15 and 19 shape everything that posts;
+1. **Accountant session on section 6.** Decisions 10–15 and 19 shape everything that posts;
    decision 20 should be settled before the PCGE is applied to a real company.
-4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
-5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
+2. **Review the voucher-counter lock** with whoever runs the database (section 7, "Differences
+   found on v16"): keep the per-statement switch, or turn snapshot isolation off server-wide.
+3. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
+4. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
    show how well the PCGE mapping fits before anything is committed.
-6. **Load "Tabla 10"** from an official file. (Ubigeo is done.)
-7. **CONCAR import engine**, parties first. Needs real export files.
-8. **E-invoicing**, including comprobantes at the point of sale (section 8). Needs the OSE /
-   PSE provider chosen and sandbox credentials.
-9. **SIRE.** Needs a real proposal from the client's SUNAT portal to compare against.
-10. **Destination entries**, after the accountant's mapping.
-11. **v16**, once the above is stable on v15.
+5. **Load "Tabla 10"** from an official file. (Ubigeo is done.)
+6. **CONCAR import engine**, parties first. Needs real export files.
+7. **E-invoicing**, including the comprobantes issued at the point of sale (section 8). Needs
+   the OSE / PSE provider chosen and sandbox credentials.
+8. **SIRE.** Needs a real proposal from the client's SUNAT portal to compare against.
+9. **Destination entries**, after the accountant's mapping.
 
-Blocked on the client: 5, 7, 8, 9, 10. Blocked on the accountant: 3, 4, 10.
+Blocked on the client: 4, 6, 7, 8, 9. Blocked on the accountant: 1, 3, 9.
 
 ## 13. File map
 
@@ -562,7 +595,7 @@ tools/
   ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
                                 SUNAT Catálogo 13 (2014)
   ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
-  mutation_check.py             the 94 deliberate bugs
+  mutation_check.py             the 101 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -574,8 +607,9 @@ erpnext_peru/
   overrides/                    document hooks
     common.py                   error classes, message translation, is_peru_company / _invoice
     party.py                    Customer and Supplier identity
-    company.py                  RUC of a Peruvian company
+    company.py                  RUC of a Peruvian company; keeps "Peru Tax" disabled
     address.py                  Ubigeo
+    transaction_deletion.py     refuses "Delete Company Transactions" once comprobantes exist
     sales_invoice.py            comprobante rules and numbering on submit
     purchase_invoice.py         supplier document, duplicates
   accounts/
@@ -583,14 +617,16 @@ erpnext_peru/
     igv.py                      setup_igv
     api.py                      methods the Company form calls; the PCGE background job
   public/js/company.js          the "Perú" menu on the Company form
+  public/js/address.js          fills City, County and State from the Ubigeo
   setup/
     custom_fields.py            every pe_* field
-    install.py                  creates fields, loads catalogues, indexes (install and migrate)
+    install.py                  version check; creates fields, loads catalogues, indexes
+    apps_screen.py              the Peru icon on the apps screen
     constraints.py              the unique indexes
     ubigeo.py                   loads data/ubigeo.csv on migrate
   data/                         sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json,
                                 ubigeo.csv
-  erpnext_peru/workspace/peru/  the "Peru" entry in the sidebar
+  erpnext_peru/workspace/peru/  the "Peru" workspace
   erpnext_peru/doctype/         SUNAT Comprobante Type, Identity Document Type, Credit Note
                                 Reason, Debit Note Reason, IGV Affectation Type, Voucher
                                 Series; Ubigeo
@@ -618,3 +654,6 @@ erpnext_peru/
 | 0.2.0 | `Handover: Frappe Cloud may deploy without a migrate` | Deployment note. |
 | 0.2.0 | `Ship the Ubigeo list: 1,893 districts from INEI, with accents` | `tools/ubigeo/`, `data/ubigeo.csv`, load on migrate, enabled flag, address filter. |
 | 0.2.0 | `Address form: fill City from the Ubigeo when it is chosen` | Found on screen: City is mandatory in the form, so the save-time fill came too late. |
+| 0.2.0 | `Handover: Ubigeo checked on the v16 site; Spanish address labels` | Screen check of the address form. |
+| 0.2.0 | `Support Frappe / ERPNext v16 only; fixes from the code review` | v15 dropped (CI, tests, version check before install); POS return reasons 06 / 07; "Delete Transactions" refused once comprobantes exist; "Peru Tax" kept disabled; modified type limited to 01 / 03; IGV warnings escaped; mutation script fixed for v16. |
+| 0.2.0 | this commit | Two tests tightened after the full mutation run on v16; POS checked on screen; documents updated for v16 only. |

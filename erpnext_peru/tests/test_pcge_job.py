@@ -2,6 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 """Applying the PCGE as a background job (the Company form's "Apply PCGE 2019")."""
 
+import pickle
 import time
 from unittest.mock import patch
 
@@ -212,6 +213,17 @@ class TestPcgeJob(PeruTestCase):
 			with self.subTest(action=action.__name__), self.assertRaises(frappe.PermissionError):
 				action(PCGE_COMPANY)
 		self.assertEqual(api.pcge_job_status(PERU_COMPANY), {"status": "none"})
+
+	def test_a_state_written_by_the_worker_is_seen_at_once(self):
+		"""The worker is another process: its write reaches Redis, not this request's own cache.
+
+		Frappe keeps every value it reads for the rest of the request unless it is
+		read with ``expires=True``; the first "none" would then hide the job.
+		"""
+		self.assertEqual(api.pcge_job_status(PCGE_COMPANY), {"status": "none"})
+		key = frappe.cache.make_key(api._state_key(PCGE_COMPANY))
+		frappe.cache.set(key, pickle.dumps({"status": "running", "started": time.time()}), ex=60)
+		self.assertEqual(api.pcge_job_status(PCGE_COMPANY)["status"], "running")
 
 	def test_states_of_different_companies_are_independent(self):
 		api._set_state(PERU_COMPANY, status="running", started=time.time())
