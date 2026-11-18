@@ -265,6 +265,33 @@ class TestSeriesRules(SalesInvoiceCase):
 		invoice = make_sales_invoice(self.ruc_customer, pe_series=" f001 ")
 		self.assertEqual(invoice.pe_series, "F001")
 
+	def test_series_follows_a_change_of_type(self):
+		invoice = make_sales_invoice(self.ruc_customer, pe_comprobante_type="03")
+		self.assertEqual(invoice.pe_series, "B001")
+		invoice.pe_comprobante_type = "01"
+		invoice.save()
+		self.assertEqual(invoice.pe_series, "F001")
+
+	def test_after_a_change_of_type_several_series_are_not_guessed(self):
+		make_series("01", "F002")
+		invoice = make_sales_invoice(self.ruc_customer, pe_comprobante_type="03")
+		invoice.pe_comprobante_type = "01"
+		invoice.save()
+		self.assertIsNone(invoice.pe_series)
+
+	def test_a_series_typed_with_the_new_type_is_still_checked(self):
+		make_series("03", "B002")
+		invoice = make_sales_invoice(self.ruc_customer, pe_comprobante_type="03")
+		invoice.update({"pe_comprobante_type": "01", "pe_series": "B002"})
+		with self.assertRaises(ComprobanteError):
+			invoice.save()
+
+	def test_a_wrong_series_without_a_change_of_type_is_still_refused(self):
+		invoice = make_sales_invoice(self.ruc_customer)
+		invoice.pe_series = "B001"
+		with self.assertRaises(ComprobanteError):
+			invoice.save()
+
 	def test_series_of_another_company_is_not_used(self):
 		frappe.delete_doc("SUNAT Voucher Series", "01-F001-" + PERU_COMPANY)
 		invoice = make_sales_invoice(self.ruc_customer)

@@ -330,6 +330,8 @@ def _series_options(doc) -> list[str]:
 
 def _set_series(doc):
 	series = normalize_series(doc.pe_series)
+	if series and _series_left_from_previous_type(doc, series):
+		series = ""  # pick again for the new type
 	if not series:
 		options = _series_options(doc)
 		if len(options) == 1:
@@ -340,6 +342,24 @@ def _set_series(doc):
 			validate_issued_series(doc.pe_comprobante_type, series, doc.pe_original_type)
 		except VoucherError as error:
 			throw_voucher_error(error)
+
+
+def _series_left_from_previous_type(doc, series) -> bool:
+	"""True when the type changed since the last save and the series no longer fits it.
+
+	A draft first saved as a Boleta gets B001; switched to Factura, that series
+	is replaced instead of refused. A series typed in the same save is checked
+	as usual.
+	"""
+	if doc.is_new():
+		return False
+	before = doc.get_doc_before_save()
+	if not before or before.get("pe_comprobante_type") == doc.pe_comprobante_type:
+		return False
+	if normalize_series(before.get("pe_series")) != series:
+		return False
+	letter = expected_series_letter(doc.pe_comprobante_type, doc.pe_original_type)
+	return bool(letter) and series[0] != letter
 
 
 def _validate_issuer(doc):

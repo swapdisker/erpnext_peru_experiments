@@ -582,6 +582,20 @@ M = [
 		"b",
 		"test_voucher_series",
 	),
+	(
+		"overrides/sales_invoice.py",
+		"	if series and _series_left_from_previous_type(doc, series):",
+		"	if False:",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/sales_invoice.py",
+		'	if normalize_series(before.get("pe_series")) != series:\n		return False\n',
+		"",
+		"b",
+		"test_sales_invoice",
+	),
 ]
 
 
