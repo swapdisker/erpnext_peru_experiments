@@ -186,10 +186,10 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **316 automated tests** (237 against a site, 79 without one), all passing on Frappe 16.56.0 /
+- **330 automated tests** (251 against a site, 79 without one), all passing on Frappe 16.56.0 /
   ERPNext 16.55.0 / MariaDB 10.11 on the test machine, and in CI on GitHub (Python 3.14,
   MariaDB 11.8). Until v15 was dropped they also passed on Frappe 15.126.1 / ERPNext 15.125.0.
-- **Mutation check: 101 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 109 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, the version check removed, and so on. The list is
   `tools/mutation_check.py`. On 17 November it was run end to end on v16: 99 made a test fail
@@ -201,7 +201,13 @@ Not shipped, because no official source could be confirmed or reached:
   the request. Both are now caught. The script was also corrected on that day: on v16 it had
   been counting a test run that never started as a caught bug. The test machine runs MariaDB
   10.11, so the two lines that switch the snapshot check off and on (section 7) are exercised
-  only by the CI job on MariaDB 11.8.
+  only by the CI job on MariaDB 11.8. On 18 November a code review found two bugs and three
+  smaller gaps: a POS return edited from a full to a partial return kept reason 06; Supplier
+  Invoice No kept an old number after the voucher number was corrected; a company rename let
+  the same series be registered twice, with two counters; a saved draft whose type changed
+  kept the previous type's series; and the S/ 700 limit was compared in the company's
+  currency rather than in soles. Each fix has its own tests and mutants; the 40 mutants
+  covering sales, purchases and series (8 of them new) were all caught.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
   was refused, the worker created 1,774 accounts in about 30 seconds and the state read "done".
@@ -596,7 +602,7 @@ tools/
   ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
                                 SUNAT Catálogo 13 (2014)
   ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
-  mutation_check.py             the 101 deliberate bugs
+  mutation_check.py             the 109 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -657,4 +663,12 @@ erpnext_peru/
 | 0.2.0 | `Address form: fill City from the Ubigeo when it is chosen` | Found on screen: City is mandatory in the form, so the save-time fill came too late. |
 | 0.2.0 | `Handover: Ubigeo checked on the v16 site; Spanish address labels` | Screen check of the address form. |
 | 0.2.0 | `Support Frappe / ERPNext v16 only; fixes from the code review` | v15 dropped (CI, tests, version check before install); POS return reasons 06 / 07; "Delete Transactions" refused once comprobantes exist; "Peru Tax" kept disabled; modified type limited to 01 / 03; IGV warnings escaped; mutation script fixed for v16. |
-| 0.2.0 | this commit | Two tests tightened after the full mutation run on v16; POS checked on screen; documents updated for v16 only. |
+| 0.2.0 | `Tighten two tests found by the v16 mutation run; docs for v16 only` | Two tests tightened after the full mutation run on v16; POS checked on screen; documents updated for v16 only. |
+| — | `Add docs/ODOO_REFERENCE.md: Odoo's Peru localization as a reference` | Odoo's localization read as a specification and compared with this app. |
+| — | `README: replace the "do not use" banner with a plain status note` | Status note in place of the banner. |
+| 0.2.0 | `POS returns: set the credit note reason from the cart as submitted` | Reason 06 / 07 set at submission, not on save. |
+| 0.2.0 | `Purchases: Supplier Invoice No follows a corrected supplier number` | A number typed separately is kept. |
+| 0.2.0 | `Voucher series: one record and one counter per company, type and series` | Duplicate refused even after a company rename. |
+| 0.2.0 | `Sales: the series follows a change of type on a saved draft` | Only a series left over from the previous type is replaced. |
+| 0.2.0 | `Boletas: measure the S/ 700 limit in soles whatever the company currency` | Conversion at the posting date's rate; refused without a rate. |
+| 0.2.0 | this commit | Documents updated for the review fixes; 330 tests, 109 mutants. |
