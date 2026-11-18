@@ -44,6 +44,7 @@ It does not yet include electronic invoicing, SIRE registers or the CONCAR impor
 | [docs/FEATURES.md](docs/FEATURES.md) | Everything the app does, in English |
 | [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md) | Todo lo que hace la app, en español |
 | [docs/HANDOVER.md](docs/HANDOVER.md) | Design, verification, open decisions and next steps, for developers and the accountant |
+| [docs/ODOO_REFERENCE.md](docs/ODOO_REFERENCE.md) | How Odoo implements Peru, compared with this app, and what to take from it |
 | [tools/pcge/README.md](tools/pcge/README.md) | Where the chart of accounts data comes from |
 | [tools/ubigeo/README.md](tools/ubigeo/README.md) | Where the Ubigeo list comes from |
 
