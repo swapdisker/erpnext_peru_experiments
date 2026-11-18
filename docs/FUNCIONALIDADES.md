@@ -93,16 +93,17 @@ no puede validar facturas de venta.
 - Las direcciones tienen un campo **Ubigeo** (el código de distrito de seis dígitos).
 - Al elegir un Ubigeo se completan la ciudad, la provincia y el departamento si están vacíos.
   Lo que el usuario escribió nunca se sobrescribe.
-- Una dirección en Perú guardada sin Ubigeo muestra un aviso y se guarda de todos modos. El
-  aviso aparece solo cuando ya se cargó la lista de Ubigeo.
-- La lista de distritos **no viene incluida**. Se carga desde un archivo CSV con las columnas
-  `code`, `department`, `province`, `district`:
-
-  ```bash
-  bench --site <sitio> execute erpnext_peru.setup.ubigeo.import_csv --kwargs "{'path': '/ruta/ubigeo.csv'}"
-  ```
-
-  Se valida todo el archivo antes de escribir cualquier registro.
+- Una dirección en Perú guardada sin Ubigeo muestra un aviso y se guarda de todos modos.
+- **Incluye los 1 893 distritos** (25 departamentos, 196 provincias), con los códigos del INEI,
+  los que usan los comprobantes electrónicos, y sus nombres con tildes. Fuentes: la relación de
+  códigos del INEI y su directorio de municipalidades de noviembre de 2026, contrastados con el
+  Catálogo 13 de SUNAT. La lista se carga al instalar y en cada actualización.
+- En el campo Ubigeo se puede escribir el distrito, la provincia o el departamento, con o sin
+  tildes: "jesus maria" encuentra 150113, Jesús María, Lima, Lima.
+- Los códigos que el INEI ya no publica se **deshabilitan**, no se borran: las direcciones que
+  los usan los conservan y muestran un aviso al guardarse; las nuevas no pueden elegirlos.
+- La lista es un dato de referencia. Lo que se edite a mano se deshace en la siguiente
+  actualización.
 
 ## 6. Ventas: comprobantes de pago
 
@@ -303,7 +304,7 @@ conservan al actualizar.
 | Tipo de Afectación del IGV SUNAT | 07 | 18 |
 | Motivo de Nota de Crédito SUNAT | 09 | 13 |
 | Motivo de Nota de Débito SUNAT | 10 | 3 |
-| Ubigeo | — | vacío hasta que se cargue |
+| Ubigeo | Catálogo 13 (códigos del INEI) | 1 893 distritos |
 
 ## 12. Monto en letras
 
@@ -322,8 +323,7 @@ Para desarrolladores que preparen un formato de impresión:
 5. En la compañía, menú **Perú → Configurar IGV**.
 6. En **Series de Comprobantes SUNAT**, cree las series: por ejemplo `F001` para el tipo 01,
    `B001` para el 03, `FC01` y `BC01` para el 07.
-7. Cargue el archivo de Ubigeo, si lo tiene.
-8. Registre a los clientes con su documento de identidad y emita el primer comprobante.
+7. Registre a los clientes con su documento de identidad y emita el primer comprobante.
 
 Antes de poder validar facturas de compra, decida cómo se contabilizan las existencias: con el
 "inventario perpetuo" de ERPNext activado, toda factura de compra exige cuentas de existencias
@@ -338,6 +338,6 @@ que la configuración del PCGE no define. Vea [HANDOVER.md](HANDOVER.md), secci�
 - Importación desde CONCAR, saldos iniciales, conciliación.
 - Asientos de destino (6 → 9 / 79).
 - Tipo de cambio diario de SUNAT.
-- La lista de distritos de Ubigeo y la lista ampliada de tipos de documento para compras.
+- La lista ampliada de tipos de documento para compras.
 - Uso con datos reales: todo se revisó en sitios de prueba con compañías, clientes e importes
   inventados, en ERPNext v15 y v16.

@@ -85,16 +85,16 @@ cannot submit sales invoices.
 - Addresses have a **Ubigeo** field (the six-digit district code).
 - When a Ubigeo is chosen, the city, county and state are filled from it if they are empty.
   What the user typed is never overwritten.
-- An address in Peru saved without Ubigeo shows a warning and is saved anyway. The warning
-  appears only once the Ubigeo list has been loaded.
-- The district list is **not shipped**. It is loaded from a CSV file with the columns `code`,
-  `department`, `province`, `district`:
-
-  ```bash
-  bench --site <site> execute erpnext_peru.setup.ubigeo.import_csv --kwargs "{'path': '/path/ubigeo.csv'}"
-  ```
-
-  The whole file is validated before anything is written.
+- An address in Peru saved without Ubigeo shows a warning and is saved anyway.
+- **All 1,893 districts are included** (25 departments, 196 provinces), with INEI's codes,
+  the ones electronic invoices use, and their names with accents. Sources: INEI's code list
+  and its directory of municipalities of November 2026, cross-checked with SUNAT's Catálogo 13.
+  The list is loaded on install and on every update.
+- In the Ubigeo field you can type the district, province or department, with or without
+  accents: "jesus maria" finds 150113, Jesús María, Lima, Lima.
+- Codes INEI no longer lists are **disabled**, not deleted: addresses that use them keep them
+  and show a warning when saved; new addresses cannot choose them.
+- The list is reference data. Edits made by hand are undone by the next update.
 
 ## 6. Sales invoices: comprobantes de pago
 
@@ -287,7 +287,7 @@ Editable masters, loaded on install. Entries you change or disable are kept on u
 | SUNAT IGV Affectation Type | 07 | 18 |
 | SUNAT Credit Note Reason | 09 | 13 |
 | SUNAT Debit Note Reason | 10 | 3 |
-| Ubigeo | — | empty until loaded |
+| Ubigeo | Catálogo 13 (INEI codes) | 1,893 districts |
 
 ## 12. Amount in words
 
@@ -306,8 +306,7 @@ For developers building a print format:
 5. On the company, menu **Peru → Set Up IGV**.
 6. In **SUNAT Voucher Series**, create the series: for example `F001` for type 01, `B001` for
    03, `FC01` and `BC01` for 07.
-7. Load the Ubigeo file, if you have it.
-8. Register customers with their identity document, and issue the first invoice.
+7. Register customers with their identity document, and issue the first invoice.
 
 Before purchase invoices can be submitted, decide how inventory is booked: with ERPNext's
 "perpetual inventory" on, every purchase invoice needs stock accounts the PCGE setup does not
@@ -322,6 +321,6 @@ define. See [HANDOVER.md](HANDOVER.md), section 7.
 - CONCAR import, opening balances, reconciliation.
 - Destination entries (6 → 9 / 79).
 - The daily SUNAT exchange rate.
-- The Ubigeo district list, and the wider list of document types for purchases.
+- The wider list of document types for purchases.
 - Data for real use: everything was checked on test sites with made-up companies, customers and
   amounts, on ERPNext v15 and v16.

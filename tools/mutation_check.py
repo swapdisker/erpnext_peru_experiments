@@ -141,6 +141,38 @@ M = [
 		"test_sales_invoice",
 	),
 	("overrides/sales_invoice.py", "	_validate_issuer(doc)\n", "", "b", "test_sales_invoice"),
+	# Ubigeo: loading on migrate, disabling, the address form
+	("setup/ubigeo.py", "		elif row.enabled:", "		elif False:", "b", "test_company_address"),
+	(
+		"setup/ubigeo.py",
+		"			if not row.enabled:",
+		"			if False:",
+		"b",
+		"test_company_address",
+	),
+	(
+		"setup/ubigeo.py",
+		"			if tuple(row.get(f) for f in NAME_FIELDS) != names:",
+		"			if False:",
+		"b",
+		"test_company_address",
+	),
+	("setup/ubigeo.py", "	if missing:", "	if False:", "b", "test_company_address"),
+	("setup/install.py", "	load_ubigeo()\n", "", "b", "test_company_address"),
+	(
+		"overrides/address.py",
+		"		if row and not row.enabled:",
+		"		if False:",
+		"b",
+		"test_company_address",
+	),
+	(
+		"setup/custom_fields.py",
+		"""			"link_filters": '[["Ubigeo", "enabled", "=", 1]]',\n""",
+		"",
+		"b",
+		"test_company_address",
+	),
 	(
 		"overrides/sales_invoice.py",
 		"	_validate_note(doc)\n\n	if not doc.pe_series:",

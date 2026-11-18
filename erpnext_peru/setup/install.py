@@ -9,6 +9,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from erpnext_peru.setup.constraints import ensure_constraints
 from erpnext_peru.setup.custom_fields import CUSTOM_FIELDS
+from erpnext_peru.setup.ubigeo import load_ubigeo
 
 CATALOGUE_DOCTYPES = {
 	"comprobante_types": "SUNAT Comprobante Type",
@@ -31,6 +32,7 @@ def setup():
 	"""Idempotent: safe to run on every migrate."""
 	create_custom_fields(CUSTOM_FIELDS, update=True)
 	load_catalogues()
+	load_ubigeo()
 	ensure_constraints()  # needs the columns the custom fields create
 
 

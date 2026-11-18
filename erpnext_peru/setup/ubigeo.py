@@ -1,69 +1,85 @@
 # Copyright (c) 2026, erpnext_peru contributors
 # License: GNU General Public License v3. See license.txt
-"""Loader for the Ubigeo master.
+"""Load the Ubigeo master from ``data/ubigeo.csv`` (INEI codes, all districts).
 
-The district list is NOT shipped with the app yet: it has to come from the
-official INEI / SUNAT publication and be verified before it is committed.
-Until then, load it on a site with::
+The CSV is generated from the official sources by ``tools/ubigeo/build_ubigeo.py``.
+It runs on every migrate and makes the table match the file:
 
-    bench --site <site> execute erpnext_peru.setup.ubigeo.import_csv --kwargs "{'path': '/path/ubigeo.csv'}"
-
-The CSV needs a header row with the columns ``code``, ``department``,
-``province`` and ``district`` (UTF-8, comma separated).
+- missing codes are inserted;
+- names that differ are set back to the file's (the list is reference data:
+  a rename by law reaches every site with the next release);
+- codes the file no longer has are disabled, never deleted: addresses may use
+  them, and the address form only offers enabled codes;
+- a disabled code that is in the file is enabled again.
 """
 
 import csv
+import os
 
 import frappe
-from frappe import _
+from frappe.utils import now_datetime
 
-REQUIRED_COLUMNS = ("code", "department", "province", "district")
+PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "ubigeo.csv")
+NAME_FIELDS = ("department", "province", "district")
 
 
-def import_csv(path: str, update: bool = False) -> dict:
-	"""Insert (and optionally update) Ubigeo records from a CSV file.
+def read_ubigeo_file(path: str = PATH) -> dict:
+	with open(path, encoding="utf-8", newline="") as handle:
+		return {row["code"]: tuple(row[f] for f in NAME_FIELDS) for row in csv.DictReader(handle)}
 
-	The whole file is validated before anything is written. Returns the counts
-	``{"inserted": n, "updated": n, "unchanged": n}``.
-	"""
-	with open(path, encoding="utf-8-sig", newline="") as handle:
-		reader = csv.DictReader(handle)
-		missing = [column for column in REQUIRED_COLUMNS if column not in (reader.fieldnames or [])]
-		if missing:
-			frappe.throw(_("The Ubigeo file is missing the columns: {0}").format(", ".join(missing)))
-		# collapse runs of whitespace, as the Ubigeo document does on save
-		rows = [
-			{column: " ".join((row.get(column) or "").split()) for column in REQUIRED_COLUMNS}
-			for row in reader
+
+def full_name(department: str, province: str, district: str) -> str:
+	# Same text as Ubigeo.validate builds.
+	return f"{district}, {province}, {department}"
+
+
+def load_ubigeo(path: str = PATH) -> dict:
+	"""Make the Ubigeo table match the file. Returns what was done, by count."""
+	official = read_ubigeo_file(path)
+	existing = {
+		row.name: row
+		for row in frappe.get_all("Ubigeo", fields=["name", *NAME_FIELDS, "enabled"], limit_page_length=0)
+	}
+	counts = {"inserted": 0, "updated": 0, "disabled": 0, "enabled": 0}
+
+	missing = [code for code in official if code not in existing]
+	if missing:
+		now = now_datetime()
+		user = frappe.session.user or "Administrator"
+		fields = [
+			"name",
+			"code",
+			*NAME_FIELDS,
+			"full_name",
+			"enabled",
+			"owner",
+			"modified_by",
+			"creation",
+			"modified",
 		]
+		values = [
+			(code, code, *official[code], full_name(*official[code]), 1, user, user, now, now)
+			for code in sorted(missing)
+		]
+		frappe.db.bulk_insert("Ubigeo", fields, values)
+		counts["inserted"] = len(values)
 
-	errors = []
-	seen = set()
-	for line, row in enumerate(rows, start=2):
-		code = row["code"]
-		if not (len(code) == 6 and code.isascii() and code.isdigit()):
-			errors.append(_("Line {0}: code {1} must have exactly 6 digits").format(line, code or "-"))
-		elif code in seen:
-			errors.append(_("Line {0}: code {1} is repeated").format(line, code))
-		seen.add(code)
-		for column in ("department", "province", "district"):
-			if not row[column]:
-				errors.append(_("Line {0}: {1} is empty").format(line, column))
-	if errors:
-		frappe.throw("<br>".join(errors[:50]), title=_("Ubigeo file has errors"))
-
-	counts = {"inserted": 0, "updated": 0, "unchanged": 0}
-	for row in rows:
-		if frappe.db.exists("Ubigeo", row["code"]):
-			doc = frappe.get_doc("Ubigeo", row["code"])
-			changed = any(doc.get(column) != row[column] for column in ("department", "province", "district"))
-			if changed and update:
-				doc.update({c: row[c] for c in ("department", "province", "district")})
-				doc.save(ignore_permissions=True)
+	for code, row in existing.items():
+		if code in official:
+			names = official[code]
+			changes = {}
+			if tuple(row.get(f) for f in NAME_FIELDS) != names:
+				changes.update(dict(zip(NAME_FIELDS, names, strict=True)), full_name=full_name(*names))
 				counts["updated"] += 1
-			else:
-				counts["unchanged"] += 1
-		else:
-			frappe.get_doc({"doctype": "Ubigeo", **row}).insert(ignore_permissions=True)
-			counts["inserted"] += 1
+			if not row.enabled:
+				changes["enabled"] = 1
+				counts["enabled"] += 1
+			if changes:
+				frappe.db.set_value("Ubigeo", code, changes)
+		elif row.enabled:
+			frappe.db.set_value("Ubigeo", code, "enabled", 0)
+			counts["disabled"] += 1
+
+	if any(counts.values()):
+		print(f"Ubigeo: {counts}")
 	return counts

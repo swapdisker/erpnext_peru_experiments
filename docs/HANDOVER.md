@@ -33,7 +33,7 @@ the user's side.
 | Step 3 — merge with the client's CONCAR / Odoo chart | Function built and tested with synthetic accounts. **No screen. Never run on the real chart.** |
 | Step 4 — identity documents, RUC / DNI validation, duplicates | Built and tested. |
 | Step 4 — comprobante type, series-number, note reason and reference | Built and tested. |
-| Step 4 — Ubigeo | Field, master and CSV loader built. **District data not loaded.** |
+| Step 4 — Ubigeo | Built and tested. All 1,893 districts shipped (INEI, November 2026), loaded on migrate. |
 | Step 4 — Boleta rule above S/ 700 | Built and tested. |
 | Step 4 — IGV 18% and the four tax categories | Built and tested. |
 | Step 4 — daily SUNAT exchange rate | Not started. |
@@ -154,6 +154,7 @@ each tax category to its template.
 | IGV rate 18% | SUNAT guidance page; Ley 32387 for the IGV / IPM split | constant in `accounts/igv.py` |
 | S/ 700 Boleta rule | Reglamento de Comprobantes de Pago, art. 8; SUNAT FAQ | constant in `overrides/sales_invoice.py` |
 | RUC check digit | Modulus 11, weights 5 4 3 2 7 6 5 4 3 2 | `utils/identity.py` |
+| Ubigeo, 1,893 districts | INEI: code list 2022 (datosabiertos.gob.pe) and RENAMU directory of November 2026, with accents; SUNAT Catálogo 13 of 2014 as a check | `data/ubigeo.csv`, generated from `tools/ubigeo/` |
 
 **The PCGE file is generated, not hand-edited.** `tools/pcge/raw/` holds the catalogue exactly
 as the MEF printed it, misprints included. `tools/pcge/build_catalogue.py` applies 13 code
@@ -161,9 +162,21 @@ corrections and 5 name corrections, each explicit, and writes the CSV. A test fa
 shipped CSV is not what the script produces. See `tools/pcge/README.md` for how the
 transcription was made and its limits.
 
+**The Ubigeo file is generated the same way.** `tools/ubigeo/build_ubigeo.py` checks INEI's
+2022 code list, INEI's directory of municipalities of November 2026 and SUNAT's 2014 catalogue
+against each other; every difference (2 districts created since 2022, 2 renames, 61 districts
+since 2014...) is declared in the script, and anything undeclared stops the build. Accents
+come from the directory; 8 corrections change only accents and capitals. The directory is not
+in the repository because it lists mayors' contact details: only its place names were
+extracted, and the script checks them against a SHA-256 taken from INEI's file. Codes are
+INEI's, not RENIEC's (Chorrillos is 150108, not 140108). See `tools/ubigeo/README.md`.
+
+`setup/ubigeo.py` loads the file on every migrate: missing codes inserted, names set back to
+the file's, codes the file no longer has disabled (never deleted). Only enabled codes can be
+chosen on an address.
+
 Not shipped, because no official source could be confirmed or reached:
 
-- **Ubigeo districts.** The loader is `setup/ubigeo.py`.
 - **Catalogue 10 codes 10 and 11** (export / IVAP adjustments): seen in third-party sources only.
 - **"Tabla 10" document types for purchases** (recibo por honorarios, DUA, non-domiciled…):
   the purchase register needs them; only catalogue 01 is loaded.
@@ -172,12 +185,12 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **291 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
+- **302 automated tests**, all passing on Frappe 15.126.1 / ERPNext 15.125.0 / MariaDB 10.11,
   on two sites, one of them a fresh install, and in CI on GitHub (v15 and v16).
-- **Mutation check: 86 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 93 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, and so on. Every one made at least one test fail. The
-  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November, 3 for the fixes from the screen check: the refusal to replace a chart with IGV set up, the apps-screen icon for website users, and clearing an obsolete field description on migrate). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
+  list is `tools/mutation_check.py`. It was run in batches (35, 24, 8 for the background job, 2 for the refused counter lock, 18 for the review fixes of 17 November, 3 for the fixes from the screen check: the refusal to replace a chart with IGV set up, the apps-screen icon for website users, and clearing an obsolete field description on migrate, 7 for the Ubigeo loader and the address field). It runs on MariaDB 10.11, so it cannot check the two lines that switch the snapshot check; only the v16 CI job exercises those. The combined script
   was checked to match the current source and spot-checked on 3 mutants, not re-run end to end.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
@@ -198,7 +211,7 @@ Not shipped, because no official source could be confirmed or reached:
 ### Not verified
 
 - **ERPNext v16 in CI and on the test machine** passes the suite (Python 3.14, MariaDB 11.8 in
-  CI; Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11 locally): 291 tests, 1 skipped, the one
+  CI; Frappe 16.56.0, ERPNext 16.55.0, MariaDB 10.11 locally): 302 tests, 1 skipped, the one
   for the v15 sidebar. The screens were also checked on a v16 site (section 9).
 - **ERPNext's own test suite with this app installed.** It could not be started on the test
   machine: it stops while creating its own fixtures, identically on a site without this app.
@@ -397,7 +410,7 @@ Checked by hand on two Frappe Cloud sites, Spanish interface, with made-up data:
 - **Purchase invoice** from a supplier with RUC: number padded to 00000123 and copied to the
   supplier invoice number; ledger 6011 debit 500, 40111 debit 90, 4212 credit 590. On a company
   just given the PCGE, ERPNext first refused it twice (section 7, point 7).
-- **Address:** the Ubigeo field shows; no district can be chosen because the list is not loaded.
+- **Address:** the Ubigeo field shows; the district list was not loaded at the time (it is now, see section 4).
 - No JavaScript errors in the browser console.
 - **v16 only:** the Peru icon on the apps screen opens the workspace, with its shortcuts and cards.
 
@@ -451,6 +464,8 @@ Things to know:
 - **Translations:** every message and label must have a row in `translations/es.csv`;
   `test_translations.py` fails otherwise, and also on stale rows.
 - **Regenerating the PCGE:** `python tools/pcge/build_catalogue.py --write`.
+- **Updating Ubigeo** (new districts): `tools/ubigeo/README.md`, then
+  `python tools/ubigeo/build_ubigeo.py --write` (needs openpyxl, e.g. the bench's Python).
 
 ### Conventions
 
@@ -517,7 +532,7 @@ through `import_client_accounts`. See decision 10 for the effect on the profit a
 4. **Decide inventory** (finding 7) and the site settings (findings 1 and 2).
 5. **Load the client's real chart** with `import_client_accounts` in dry-run mode. It will
    show how well the PCGE mapping fits before anything is committed.
-6. **Load Ubigeo and "Tabla 10"** from official files.
+6. **Load "Tabla 10"** from an official file. (Ubigeo is done.)
 7. **CONCAR import engine**, parties first. Needs real export files.
 8. **E-invoicing**, including comprobantes at the point of sale (section 8). Needs the OSE /
    PSE provider chosen and sandbox credentials.
@@ -537,7 +552,10 @@ docs/HANDOVER.md                this document
 tools/
   pcge/raw/                     the MEF catalogue as printed
   pcge/build_catalogue.py       raw transcription -> data/pcge_2019.csv
-  mutation_check.py             the 83 deliberate bugs
+  ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
+                                SUNAT Catálogo 13 (2014)
+  ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
+  mutation_check.py             the 93 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -562,8 +580,9 @@ erpnext_peru/
     custom_fields.py            every pe_* field
     install.py                  creates fields, loads catalogues, indexes (install and migrate)
     constraints.py              the unique indexes
-    ubigeo.py                   CSV loader
-  data/                         sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json
+    ubigeo.py                   loads data/ubigeo.csv on migrate
+  data/                         sunat_catalogues.json, pcge_2019.csv, pcge_2019_notes.json,
+                                ubigeo.csv
   erpnext_peru/workspace/peru/  the "Peru" entry in the sidebar
   erpnext_peru/doctype/         SUNAT Comprobante Type, Identity Document Type, Credit Note
                                 Reason, Debit Note Reason, IGV Affectation Type, Voucher
@@ -590,3 +609,4 @@ erpnext_peru/
 | 0.2.0 | `Fixes from the on-screen check; Peru icon on the v16 apps screen` | Labels, hidden draft number, list columns, chart-replace refusal, v16 apps-screen icon. |
 | 0.2.0 | `Clear the obsolete voucher-number description; screen check on v16` | Description cleared on migrate; handover section 9 rewritten from the v15 and v16 checks. |
 | 0.2.0 | `Handover: Frappe Cloud may deploy without a migrate` | Deployment note. |
+| 0.2.0 | `Ship the Ubigeo list: 1,893 districts from INEI, with accents` | `tools/ubigeo/`, `data/ubigeo.csv`, load on migrate, enabled flag, address filter. |

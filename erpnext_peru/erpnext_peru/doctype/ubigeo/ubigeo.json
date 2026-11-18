@@ -3,7 +3,7 @@
  "allow_rename": 0,
  "autoname": "field:code",
  "creation": "2026-11-15 00:00:00.000000",
- "description": "Código de ubicación geográfica (INEI) de seis dígitos: departamento, provincia y distrito",
+ "description": "Código de ubicación geográfica (INEI) de seis dígitos: departamento, provincia y distrito. La lista se carga desde los datos oficiales en cada migración.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -11,7 +11,8 @@
   "department",
   "province",
   "district",
-  "full_name"
+  "full_name",
+  "enabled"
  ],
  "fields": [
   {
@@ -44,7 +45,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "District",
-   "reqd": 1
+   "reqd": 1,
+   "in_standard_filter": 1
   },
   {
    "fieldname": "full_name",
@@ -52,10 +54,20 @@
    "label": "Full Name",
    "length": 255,
    "read_only": 1
+  },
+  {
+   "default": "1",
+   "description": "Disabled codes are no longer in INEI's list. Addresses keep them; new addresses cannot choose them.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Enabled",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-11-17 18:00:00.000000",
+ "modified": "2026-11-17 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "ERPNext Peru",
  "name": "Ubigeo",
@@ -67,25 +79,10 @@
    "delete": 1,
    "email": 1,
    "export": 1,
-   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "select": 1,
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "import": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts Manager",
    "select": 1,
    "share": 1,
    "write": 1

@@ -14,7 +14,17 @@ def validate(doc, method=None):
 	"""
 	ubigeo = doc.get("pe_ubigeo")
 	if ubigeo:
-		row = frappe.db.get_value("Ubigeo", ubigeo, ["district", "province", "department"], as_dict=True)
+		row = frappe.db.get_value(
+			"Ubigeo", ubigeo, ["district", "province", "department", "enabled"], as_dict=True
+		)
+		if row and not row.enabled:
+			frappe.msgprint(
+				_("Ubigeo {0} is no longer in INEI's list. Choose the current code of the district.").format(
+					frappe.bold(ubigeo)
+				),
+				indicator="orange",
+				alert=True,
+			)
 		if row:
 			# Only fill blanks: never overwrite what the user typed.
 			if not doc.city:

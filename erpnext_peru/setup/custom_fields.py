@@ -52,6 +52,8 @@ CUSTOM_FIELDS = {
 			"options": "Ubigeo",
 			"insert_after": "pincode",
 			"description": "Six-digit district code. Mandatory for electronic invoicing.",
+			# Codes INEI no longer lists stay on old addresses but cannot be chosen.
+			"link_filters": '[["Ubigeo", "enabled", "=", 1]]',
 		},
 	],
 	"Sales Taxes and Charges Template": [
