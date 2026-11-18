@@ -561,6 +561,20 @@ M = [
 		"test_party",
 	),
 	("overrides/address.py", ' and frappe.db.exists("Ubigeo", {})', "", "b", "test_company_address"),
+	(
+		"overrides/purchase_invoice.py",
+		"	if not current or (previous and current == previous):",
+		"	if not current:",
+		"b",
+		"test_purchase_invoice",
+	),
+	(
+		"overrides/purchase_invoice.py",
+		"		_clear(doc)\n		_sync_bill_no(doc)\n",
+		"		_clear(doc)\n",
+		"b",
+		"test_purchase_invoice",
+	),
 ]
 
 

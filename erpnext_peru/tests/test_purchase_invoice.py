@@ -44,6 +44,31 @@ class TestPurchaseInvoice(PeruTestCase):
 		)
 		self.assertEqual(invoice.bill_no, "REF-1")
 
+	def test_bill_no_follows_a_corrected_number(self):
+		invoice = make_purchase_invoice(
+			self.supplier, rate=250, pe_comprobante_type="01", pe_series="F001", pe_number="123"
+		)
+		invoice.pe_number = "124"  # a typo corrected after the first save
+		invoice.save()
+		self.assertEqual(invoice.pe_voucher_number, "F001-00000124")
+		self.assertEqual(invoice.bill_no, "F001-00000124")
+
+	def test_bill_no_follows_a_removed_number(self):
+		invoice = make_purchase_invoice(
+			self.supplier, rate=250, pe_comprobante_type="01", pe_series="F001", pe_number="123"
+		)
+		invoice.update({"pe_comprobante_type": None, "pe_series": None, "pe_number": None})
+		invoice.save()
+		self.assertFalse(invoice.bill_no)
+
+	def test_a_bill_no_typed_separately_survives_a_corrected_number(self):
+		invoice = make_purchase_invoice(
+			self.supplier, bill_no="REF-1", pe_comprobante_type="01", pe_series="F001", pe_number="1"
+		)
+		invoice.pe_number = "2"
+		invoice.save()
+		self.assertEqual(invoice.bill_no, "REF-1")
+
 	def test_fields_are_optional(self):
 		invoice = make_purchase_invoice(self.supplier)
 		self.assertIsNone(invoice.pe_comprobante_type)

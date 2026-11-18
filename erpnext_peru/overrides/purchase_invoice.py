@@ -56,6 +56,7 @@ def validate(doc, method=None):
 				exc=ComprobanteError,
 			)
 		_clear(doc)
+		_sync_bill_no(doc)
 		return
 
 	check_catalogue_entry(COMPROBANTE_TYPE_DOCTYPE, comprobante_type, _("Comprobante Type"))
@@ -84,9 +85,7 @@ def validate(doc, method=None):
 
 	_set_original_reference(doc)
 	_check_duplicate(doc)
-
-	if not (doc.bill_no or "").strip():
-		doc.bill_no = doc.pe_voucher_number
+	_sync_bill_no(doc)
 
 
 def before_submit(doc, method=None):
@@ -101,6 +100,20 @@ def before_submit(doc, method=None):
 			),
 			exc=ComprobanteError,
 		)
+
+
+def _sync_bill_no(doc):
+	"""Keep ERPNext's Supplier Invoice No in step with the supplier's document.
+
+	It is filled in when empty, and follows a corrected (or removed) number while
+	it still holds the number copied here before. A Supplier Invoice No typed
+	separately is kept.
+	"""
+	current = (doc.get("bill_no") or "").strip()
+	before = None if doc.is_new() else doc.get_doc_before_save()
+	previous = before.get("pe_voucher_number") if before else None
+	if not current or (previous and current == previous):
+		doc.bill_no = doc.pe_voucher_number
 
 
 def _clear(doc):
