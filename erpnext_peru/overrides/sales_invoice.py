@@ -54,6 +54,7 @@ from erpnext_peru.utils.voucher import (
 # Anexo N.° 2 of R.S. 097-2012/SUNAT: the buyer must be identified when the
 # total of a Boleta de venta EXCEEDS seven hundred soles.
 BOLETA_ID_THRESHOLD = 700.0
+SOLES = "PEN"
 
 CREDIT_REASON_DOCTYPE = "SUNAT Credit Note Reason"
 DEBIT_REASON_DOCTYPE = "SUNAT Debit Note Reason"
@@ -422,8 +423,7 @@ def _validate_customer_identity(doc):
 				title=_("Factura Requires RUC"),
 			)
 	elif governing_type == TYPE_BOLETA:
-		# Notes have negative totals when they reduce the sale: the amount counts.
-		total = abs(flt(doc.base_grand_total, 2))
+		total = _total_in_soles(doc)
 		if total > BOLETA_ID_THRESHOLD and not (identity_type and identity_number):
 			frappe.throw(
 				_(
@@ -432,6 +432,32 @@ def _validate_customer_identity(doc):
 				exc=ComprobanteError,
 				title=_("Customer Identity Required"),
 			)
+
+
+def _total_in_soles(doc) -> float:
+	"""The invoice total, IGV included, in soles, whatever currency the company keeps its books in.
+
+	Notes have negative totals when they reduce the sale: the amount counts.
+	"""
+	if doc.get("currency") == SOLES:
+		return abs(flt(doc.grand_total, 2))
+	if _company_currency(doc.company) == SOLES:
+		return abs(flt(doc.base_grand_total, 2))
+	from erpnext.setup.utils import get_exchange_rate
+
+	rate = flt(get_exchange_rate(doc.currency, SOLES, doc.posting_date, "for_selling"))
+	if not rate:
+		frappe.throw(
+			_(
+				"There is no exchange rate from {0} to PEN for {1}: it is needed to check the S/ 700 limit of the Boleta de venta. Register it in Currency Exchange."
+			).format(doc.currency, frappe.format(doc.posting_date, "Date")),
+			exc=ComprobanteError,
+		)
+	return abs(flt(flt(doc.grand_total) * rate, 2))
+
+
+def _company_currency(company: str) -> str:
+	return frappe.get_cached_value("Company", company, "default_currency")
 
 
 def _validate_note(doc):

@@ -804,6 +804,42 @@ class TestPosReturns(SalesInvoiceCase):
 		self.assertEqual(_pos_return_reason(note), "07")
 
 
+class TestTotalInSoles(SalesInvoiceCase):
+	"""The S/ 700 limit is in soles, whatever currency the company keeps its books in."""
+
+	def total(self, company_currency="PEN", rate=None, **values):
+		from erpnext_peru.overrides import sales_invoice
+
+		doc = frappe._dict(company=PERU_COMPANY, posting_date="2026-11-18", **values)
+		with (
+			patch.object(sales_invoice, "_company_currency", return_value=company_currency),
+			patch("erpnext.setup.utils.get_exchange_rate", return_value=rate) as get_rate,
+		):
+			total = sales_invoice._total_in_soles(doc)
+		return total, get_rate
+
+	def test_an_invoice_in_soles(self):
+		total, get_rate = self.total(currency="PEN", grand_total=-118, base_grand_total=-31.89)
+		self.assertEqual(total, 118)
+		get_rate.assert_not_called()
+
+	def test_a_company_in_soles(self):
+		total, get_rate = self.total(currency="USD", grand_total=200, base_grand_total=740)
+		self.assertEqual(total, 740)
+		get_rate.assert_not_called()
+
+	def test_a_company_in_dollars_converts_to_soles(self):
+		total, get_rate = self.total(
+			company_currency="USD", rate=3.7, currency="USD", grand_total=200, base_grand_total=200
+		)
+		self.assertEqual(total, 740)
+		self.assertEqual(get_rate.call_args.args[:2], ("USD", "PEN"))
+
+	def test_without_an_exchange_rate_the_boleta_is_refused(self):
+		with self.assertRaisesRegex(ComprobanteError, "exchange rate"):
+			self.total(company_currency="USD", rate=0, currency="USD", grand_total=200)
+
+
 class TestTransactionDeletion(SalesInvoiceCase):
 	"""ERPNext's "Delete Company Transactions" would wipe issued comprobantes."""
 
