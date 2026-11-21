@@ -294,13 +294,34 @@ class TestConcurrentRegistration(PeruTestCase):
 		results, errors = self._run_threads(register, workers)
 		self.assertEqual(len(results), 1, errors)
 		self.assertEqual(len(errors), workers - 1)
-		for error in errors:
-			self.assertIsInstance(error, (DuplicateVoucherError, ComprobanteError))
+		for error in errors:  # each waited for the one before and then saw it
+			self.assertIsInstance(error, DuplicateVoucherError)
 		frappe.db.rollback()
 		stored = frappe.get_all(
 			"Purchase Invoice", {"supplier": self.supplier, "docstatus": ("<", 2)}, pluck="pe_voucher_number"
 		)
 		self.assertEqual(stored, ["F001-00000777"])
+
+	def test_two_drafts_corrected_to_the_same_document_at_once(self):
+		"""Saving existing drafts takes no naming lock; the supplier's row is what orders them."""
+		drafts = [
+			make_purchase_invoice(
+				self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number=str(900 + n)
+			).name
+			for n in range(2)
+		]
+		frappe.db.commit()
+
+		def correct(index):
+			invoice = frappe.get_doc("Purchase Invoice", drafts[index])
+			invoice.pe_number = "999"
+			invoice.save()
+			frappe.db.commit()
+			return invoice.name
+
+		results, errors = self._run_threads(correct, 2)
+		self.assertEqual(len(results), 1, errors)
+		self.assertEqual([type(error) for error in errors], [DuplicateVoucherError])
 
 	def test_different_documents_of_one_supplier_are_all_booked(self):
 		workers = 4
