@@ -645,6 +645,41 @@ M = [
 		"b",
 		"test_pcge_apply",
 	),
+	(
+		"hooks.py",
+		'		"before_update_after_submit": "erpnext_peru.overrides.transaction_deletion.before_submit",\n',
+		"",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"hooks.py",
+		'company_data_to_be_ignored = ["SUNAT Voucher Series"]',
+		"company_data_to_be_ignored = []",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/transaction_deletion.py",
+		'	if any(row.get("doctype_name") == SERIES_DOCTYPE for row in doc.get("doctypes_to_delete") or []):',
+		"	if False:",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/purchase_invoice.py",
+		'			frappe.db.sql("select name from `tabSupplier` where name = %s for update", (doc.supplier,))\n',
+		"",
+		"b",
+		"test_purchase_invoice",
+	),
+	(
+		"overrides/purchase_invoice.py",
+		'			existing = frappe.db.get_value("Purchase Invoice", filters, "name", for_update=True)',
+		'			existing = frappe.db.get_value("Purchase Invoice", filters, "name")',
+		"b",
+		"test_purchase_invoice",
+	),
 ]
 
 

@@ -3,10 +3,13 @@
 """Supplier comprobante fields on Purchase Invoices."""
 
 import threading
+import time
+from unittest.mock import patch
 
 import frappe
 from frappe.utils import flt
 
+from erpnext_peru.overrides import purchase_invoice
 from erpnext_peru.overrides.common import ComprobanteError, DuplicateVoucherError
 from erpnext_peru.tests.utils import (
 	FOREIGN_COMPANY,
@@ -319,7 +322,15 @@ class TestConcurrentRegistration(PeruTestCase):
 			frappe.db.commit()
 			return invoice.name
 
-		results, errors = self._run_threads(correct, 2)
+		# Each save pauses right after its check, so that the two always overlap.
+		sync_bill_no = purchase_invoice._sync_bill_no
+
+		def slow_sync_bill_no(doc):
+			time.sleep(0.5)
+			sync_bill_no(doc)
+
+		with patch.object(purchase_invoice, "_sync_bill_no", slow_sync_bill_no):
+			results, errors = self._run_threads(correct, 2)
 		self.assertEqual(len(results), 1, errors)
 		self.assertEqual([type(error) for error in errors], [DuplicateVoucherError])
 
