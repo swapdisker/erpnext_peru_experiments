@@ -186,10 +186,10 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **330 automated tests** (251 against a site, 79 without one), all passing on Frappe 16.56.0 /
+- **337 automated tests** (258 against a site, 79 without one), all passing on Frappe 16.56.0 /
   ERPNext 16.55.0 / MariaDB 10.11 on the test machine, and in CI on GitHub (Python 3.14,
   MariaDB 11.8). Until v15 was dropped they also passed on Frappe 15.126.1 / ERPNext 15.125.0.
-- **Mutation check: 109 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 114 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, the version check removed, and so on. The list is
   `tools/mutation_check.py`. On 17 November it was run end to end on v16: 99 made a test fail
@@ -207,7 +207,12 @@ Not shipped, because no official source could be confirmed or reached:
   the same series be registered twice, with two counters; a saved draft whose type changed
   kept the previous type's series; and the S/ 700 limit was compared in the company's
   currency rather than in soles. Each fix has its own tests and mutants; the 40 mutants
-  covering sales, purchases and series (8 of them new) were all caught.
+  covering sales, purchases and series (8 of them new) were all caught. A second review on
+  20 November found three more: a comprobante type given automatically was kept when the
+  draft's customer changed (at the point of sale this issued a Boleta to a RUC customer, or
+  made the sale impossible to complete); a note whose modified type was corrected kept the old
+  series; and in the account import, the accounts below a rejected row were hung from a higher
+  account. The 43 mutants of sales_invoice.py and pcge.py (5 of them new) were all caught.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
   was refused, the worker created 1,774 accounts in about 30 seconds and the state read "done".
@@ -602,7 +607,7 @@ tools/
   ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
                                 SUNAT Catálogo 13 (2014)
   ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
-  mutation_check.py             the 109 deliberate bugs
+  mutation_check.py             the 114 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -671,4 +676,8 @@ erpnext_peru/
 | 0.2.0 | `Voucher series: one record and one counter per company, type and series` | Duplicate refused even after a company rename. |
 | 0.2.0 | `Sales: the series follows a change of type on a saved draft` | Only a series left over from the previous type is replaced. |
 | 0.2.0 | `Boletas: measure the S/ 700 limit in soles whatever the company currency` | Conversion at the posting date's rate; refused without a rate. |
-| 0.2.0 | this commit | Documents updated for the review fixes; 330 tests, 109 mutants. |
+| 0.2.0 | `Handover and README: review fixes, 330 tests, 109 mutants` | Documents updated for the review fixes. |
+| 0.2.0 | `Sales: the comprobante type follows a change of customer on a saved draft` | Only a type still equal to the previous default is set again. |
+| 0.2.0 | `Account import: an account below a rejected row is not hung higher up` | Rejected with `parent_not_available`. |
+| 0.2.0 | `Sales: the series also follows a corrected modified comprobante type` | FC01 -> BC01 when a note's modified type changes. |
+| 0.2.0 | this commit | Documents updated for the second review; 337 tests, 114 mutants. |
