@@ -522,15 +522,34 @@ class TestCreditNotes(SalesInvoiceCase):
 			make_return(self.factura, pe_credit_note_reason="01", pe_series="BC01")
 
 	def test_credit_note_on_a_large_boleta_counts_its_amount(self):
-		"""Credit notes have negative totals: S/ -800 is above the S/ 700 threshold."""
+		"""Credit notes have negative totals: S/ -800 is above the S/ 700 threshold.
+
+		The Boleta is one of a previous system, so the note takes the customer's document.
+		"""
+		note = make_sales_invoice(
+			self.anonymous,
+			rate=800,
+			qty=-1,
+			is_return=1,
+			pe_credit_note_reason="07",
+			pe_original_type="03",
+			pe_original_voucher_number="B009-5",
+		)
+		with self.assertRaisesRegex(ComprobanteError, "700"):
+			note.submit()
+
+	def test_a_note_on_an_identified_boleta_stays_identified(self):
+		"""The customer's document is removed after the Boleta: the note names the Boleta's buyer."""
 		boleta = make_sales_invoice(self.dni_customer, rate=800)
 		boleta.submit()
 		frappe.db.set_value(
 			"Customer", self.dni_customer, {"pe_identity_type": None, "pe_identity_number": None}
 		)
 		note = make_return(boleta, pe_credit_note_reason="07")
-		with self.assertRaises(ComprobanteError):
-			note.submit()
+		note.submit()
+		self.assertEqual(
+			(note.pe_customer_identity_type, note.pe_customer_identity_number), ("1", "40000001")
+		)
 
 	def test_credit_note_on_a_boleta_uses_the_b_series(self):
 		boleta = make_sales_invoice(self.dni_customer, rate=100)
@@ -628,6 +647,31 @@ class TestCreditNotes(SalesInvoiceCase):
 		"""F001 is the company's Factura series: "Boleta F001-1" cannot exist."""
 		with self.assertRaisesRegex(ComprobanteError, "series for comprobante type 01"):
 			self.typed_note("F001-1", customer=self.dni_customer, original_type="03")
+
+	def correct_the_customers_ruc(self):
+		customer = frappe.get_doc("Customer", self.ruc_customer)
+		issued_to = customer.pe_identity_number
+		customer.pe_identity_number = make_ruc(30000005)
+		customer.save()
+		return issued_to
+
+	def test_a_note_states_the_buyer_of_the_voucher_it_modifies(self):
+		"""SUNAT: a note goes to the same buyer, also after the customer's RUC was corrected."""
+		issued_to = self.correct_the_customers_ruc()
+		note = make_return(self.factura, pe_credit_note_reason="02")
+		note.submit()
+		self.assertEqual((note.pe_customer_identity_type, note.pe_customer_identity_number), ("6", issued_to))
+
+	def test_a_typed_voucher_also_gives_its_buyer(self):
+		issued_to = self.correct_the_customers_ruc()
+		note = self.typed_note("F001-1")
+		self.assertEqual(note.pe_customer_identity_number, issued_to)
+
+	def test_a_voucher_of_a_previous_system_takes_the_customers_document(self):
+		note = self.typed_note("0001-123")
+		self.assertEqual(
+			note.pe_customer_identity_number, frappe.db.get_value("Customer", self.ruc_customer, "tax_id")
+		)
 
 	def test_credit_note_without_reference_is_blocked(self):
 		note = make_sales_invoice(self.ruc_customer, qty=-1, is_return=1, pe_credit_note_reason="01")

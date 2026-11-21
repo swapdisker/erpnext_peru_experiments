@@ -301,7 +301,9 @@ def _set_note_fields(doc):
 		doc.pe_original_voucher_number = None
 
 	if not linked and doc.pe_original_type and doc.pe_original_voucher_number:
-		_check_typed_reference(doc)
+		linked = _check_typed_reference(doc)
+	if linked:
+		_take_identity_from(linked, doc)
 
 
 def _linked_original(doc):
@@ -315,7 +317,15 @@ def _linked_original(doc):
 	original = frappe.db.get_value(
 		"Sales Invoice",
 		doc.return_against,
-		["company", "customer", "docstatus", "pe_comprobante_type", "pe_voucher_number"],
+		[
+			"company",
+			"customer",
+			"docstatus",
+			"pe_comprobante_type",
+			"pe_voucher_number",
+			"pe_customer_identity_type",
+			"pe_customer_identity_number",
+		],
 		as_dict=True,
 	)
 	if not original:
@@ -339,6 +349,17 @@ def _linked_original(doc):
 	return original
 
 
+def _take_identity_from(original, doc):
+	"""A note states the buyer of the voucher it modifies, as that voucher states it.
+
+	SUNAT: a note is issued to the same buyer, and cannot change it. When the
+	customer's document was corrected after the voucher was issued (a wrong RUC,
+	say), the customer master no longer shows the buyer the voucher names.
+	"""
+	doc.pe_customer_identity_type = original.pe_customer_identity_type or None
+	doc.pe_customer_identity_number = original.pe_customer_identity_number or None
+
+
 def _check_typed_reference(doc):
 	"""A modified voucher typed by hand, checked against the vouchers issued here.
 
@@ -353,7 +374,7 @@ def _check_typed_reference(doc):
 			"pe_comprobante_type": doc.pe_original_type,
 			"pe_voucher_number": doc.pe_original_voucher_number,
 		},
-		["name", "customer", "docstatus"],
+		["name", "customer", "docstatus", "pe_customer_identity_type", "pe_customer_identity_number"],
 		as_dict=True,
 	)
 	voucher = frappe.bold(doc.pe_original_voucher_number)
