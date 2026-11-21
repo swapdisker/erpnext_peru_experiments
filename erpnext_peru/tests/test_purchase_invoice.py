@@ -284,45 +284,32 @@ class TestConcurrentRegistration(PeruTestCase):
 			thread.join(timeout=120)
 		return results, errors
 
-	def test_the_same_document_is_booked_once(self):
-		workers = 4
+	def drafts(self, count):
+		"""Named one at a time: Frappe's naming series is not what is tested here.
 
-		def register(index):
-			invoice = make_purchase_invoice(
-				self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number="777"
-			)
-			frappe.db.commit()
-			return invoice.name
-
-		results, errors = self._run_threads(register, workers)
-		self.assertEqual(len(results), 1, errors)
-		self.assertEqual(len(errors), workers - 1)
-		for error in errors:  # each waited for the one before and then saw it
-			self.assertIsInstance(error, DuplicateVoucherError)
-		frappe.db.rollback()
-		stored = frappe.get_all(
-			"Purchase Invoice", {"supplier": self.supplier, "docstatus": ("<", 2)}, pluck="pe_voucher_number"
-		)
-		self.assertEqual(stored, ["F001-00000777"])
-
-	def test_two_drafts_corrected_to_the_same_document_at_once(self):
-		"""Saving existing drafts takes no naming lock; the supplier's row is what orders them."""
-		drafts = [
+		(On MariaDB 11.8 Frappe itself refuses all but one of several documents of
+		the same naming series created at the same instant.)
+		"""
+		names = [
 			make_purchase_invoice(
 				self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number=str(900 + n)
 			).name
-			for n in range(2)
+			for n in range(count)
 		]
 		frappe.db.commit()
+		return names
+
+	def correct_at_once(self, drafts, numbers):
+		"""Save each draft with its new number, all at the same time."""
 
 		def correct(index):
 			invoice = frappe.get_doc("Purchase Invoice", drafts[index])
-			invoice.pe_number = "999"
+			invoice.pe_number = numbers[index]
 			invoice.save()
 			frappe.db.commit()
-			return invoice.name
+			return invoice.pe_voucher_number
 
-		# Each save pauses right after its check, so that the two always overlap.
+		# Each save pauses right after its check, so that they always overlap.
 		sync_bill_no = purchase_invoice._sync_bill_no
 
 		def slow_sync_bill_no(doc):
@@ -330,20 +317,23 @@ class TestConcurrentRegistration(PeruTestCase):
 			sync_bill_no(doc)
 
 		with patch.object(purchase_invoice, "_sync_bill_no", slow_sync_bill_no):
-			results, errors = self._run_threads(correct, 2)
-		self.assertEqual(len(results), 1, errors)
-		self.assertEqual([type(error) for error in errors], [DuplicateVoucherError])
+			return self._run_threads(correct, len(drafts))
+
+	def test_the_same_document_is_booked_once(self):
+		drafts = self.drafts(4)
+		results, errors = self.correct_at_once(drafts, ["999"] * 4)
+		self.assertEqual(results, ["F001-00000999"], errors)
+		# each waited for the one before and then saw it
+		self.assertEqual([type(error) for error in errors], [DuplicateVoucherError] * 3)
+		frappe.db.rollback()
+		stored = frappe.get_all(
+			"Purchase Invoice", {"supplier": self.supplier, "pe_number": "00000999"}, pluck="name"
+		)
+		self.assertEqual(len(stored), 1)
 
 	def test_different_documents_of_one_supplier_are_all_booked(self):
-		workers = 4
-
-		def register(index):
-			invoice = make_purchase_invoice(
-				self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number=str(800 + index)
-			)
-			frappe.db.commit()
-			return invoice.pe_voucher_number
-
-		results, errors = self._run_threads(register, workers)
+		"""The check locks only the rows of the same document: no deadlock between drafts."""
+		drafts = self.drafts(4)
+		results, errors = self.correct_at_once(drafts, [str(800 + n) for n in range(4)])
 		self.assertEqual(errors, [])
-		self.assertEqual(sorted(results), [f"F001-{800 + n:08d}" for n in range(workers)])
+		self.assertEqual(sorted(results), [f"F001-{800 + n:08d}" for n in range(4)])

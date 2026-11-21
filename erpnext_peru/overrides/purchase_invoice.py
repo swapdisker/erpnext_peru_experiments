@@ -166,19 +166,10 @@ def _check_duplicate(doc):
 	at a time: the supplier's row is locked until the transaction ends, and the
 	check is a locking read, which sees what the previous registration committed.
 	"""
-	filters = {
-		"company": doc.company,
-		"supplier": doc.supplier,
-		"pe_comprobante_type": doc.pe_comprobante_type,
-		"pe_voucher_number": doc.pe_voucher_number,
-		"docstatus": ("<", 2),
-	}
-	if doc.name:
-		filters["name"] = ("!=", doc.name)
 	with _locking_read_sees_latest():
 		try:
 			frappe.db.sql("select name from `tabSupplier` where name = %s for update", (doc.supplier,))
-			existing = frappe.db.get_value("Purchase Invoice", filters, "name", for_update=True)
+			existing = _registered_elsewhere(doc)
 		except Exception as error:
 			if not _is_concurrent_change(error):
 				raise
@@ -198,3 +189,30 @@ def _check_duplicate(doc):
 			exc=DuplicateVoucherError,
 			title=_("Duplicate Comprobante"),
 		)
+
+
+# The index Frappe creates for the field's search_index.
+VOUCHER_INDEX = "pe_voucher_number_index"
+
+
+def _registered_elsewhere(doc) -> str | None:
+	"""Another Purchase Invoice, not cancelled, booking the same supplier document.
+
+	A locking read, through the voucher number's index only: scanned through
+	another index (the supplier's, or the primary key for "name !="), it would
+	also lock the other drafts of the supplier, and two users correcting two
+	of them at once would deadlock.
+	"""
+	hint = (
+		f"FORCE INDEX (`{VOUCHER_INDEX}`)"
+		if frappe.db.has_index("tabPurchase Invoice", VOUCHER_INDEX)
+		else ""
+	)
+	rows = frappe.db.sql(
+		f"""select name from `tabPurchase Invoice` {hint}
+		where pe_voucher_number = %s and company = %s and supplier = %s
+		and pe_comprobante_type = %s and docstatus < 2
+		for update""",
+		(doc.pe_voucher_number, doc.company, doc.supplier, doc.pe_comprobante_type),
+	)
+	return next((name for (name,) in rows if name != doc.name), None)
