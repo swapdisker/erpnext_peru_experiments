@@ -680,6 +680,20 @@ M = [
 		"b",
 		"test_purchase_invoice",
 	),
+	(
+		"overrides/sales_invoice.py",
+		"		elif doc.is_new():\n			series = _series_of_repeated_invoice(doc, options)\n",
+		"",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/sales_invoice.py",
+		'	return series if series in options else ""',
+		'	return series or ""',
+		"b",
+		"test_sales_invoice",
+	),
 ]
 
 
