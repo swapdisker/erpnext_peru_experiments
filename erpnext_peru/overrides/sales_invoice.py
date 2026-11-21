@@ -356,12 +356,33 @@ def _set_series(doc):
 		options = _series_options(doc)
 		if len(options) == 1:
 			series = options[0]
+		elif doc.is_new():
+			series = _series_of_repeated_invoice(doc, options)
 	doc.pe_series = series or None
 	if series:
 		try:
 			validate_issued_series(doc.pe_comprobante_type, series, doc.pe_original_type)
 		except VoucherError as error:
 			throw_voucher_error(error)
+
+
+def _series_of_repeated_invoice(doc, options) -> str:
+	"""An invoice made by Auto Repeat takes the series of the invoice it repeats.
+
+	Auto Repeat copies the invoice without the fields that are not copied, the
+	series among them, and can submit the copy at once: with several series to
+	choose from, the submission failed and Auto Repeat switched itself off. The
+	series is taken only while it is still one of the enabled ones for the type.
+	"""
+	if not doc.get("auto_repeat"):
+		return ""
+	reference = frappe.db.get_value(
+		"Auto Repeat", doc.auto_repeat, ["reference_doctype", "reference_document"], as_dict=True
+	)
+	if not reference or reference.reference_doctype != doc.doctype:
+		return ""
+	series = frappe.db.get_value(doc.doctype, reference.reference_document, "pe_series")
+	return series if series in options else ""
 
 
 def _series_left_from_previous_type(doc, series) -> bool:

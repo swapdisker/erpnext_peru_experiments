@@ -887,6 +887,48 @@ class TestTotalInSoles(SalesInvoiceCase):
 			self.total(company_currency="USD", rate=0, currency="USD", grand_total=200)
 
 
+class TestAutoRepeat(SalesInvoiceCase):
+	"""Auto Repeat copies an invoice without its series and can submit the copy at once."""
+
+	def setUp(self):
+		super().setUp()
+		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+		# Customize Form > Sales Invoice > Allow Auto Repeat, as a company would do.
+		make_property_setter("Sales Invoice", None, "allow_auto_repeat", 1, "Check", for_doctype=True)
+		frappe.clear_cache(doctype="Sales Invoice")
+		self.addCleanup(frappe.clear_cache, doctype="Sales Invoice")
+		make_series("01", "F002")
+
+	def repeat(self, invoice):
+		schedule = frappe.get_doc(
+			{
+				"doctype": "Auto Repeat",
+				"reference_doctype": "Sales Invoice",
+				"reference_document": invoice.name,
+				"frequency": "Monthly",
+				"start_date": frappe.utils.today(),
+				"submit_on_creation": 1,
+			}
+		).insert()
+		return schedule.make_new_document()
+
+	def test_the_repeated_invoice_keeps_the_series_of_the_original(self):
+		original = make_sales_invoice(self.ruc_customer, pe_series="F002")
+		original.submit()
+		repeated = self.repeat(original)
+		self.assertEqual(repeated.docstatus, 1)
+		self.assertEqual(repeated.pe_voucher_number, "F002-00000002")
+
+	def test_a_series_that_no_longer_fits_is_not_taken(self):
+		original = make_sales_invoice(self.ruc_customer, pe_series="F002")
+		original.submit()
+		frappe.db.set_value("SUNAT Voucher Series", {"series": "F002"}, "enabled", 0)
+		make_series("01", "F003")  # F001 and F003 left: a person has to choose
+		with self.assertRaisesRegex(ComprobanteError, "Select the series"):
+			self.repeat(original)
+
+
 class TestTransactionDeletion(SalesInvoiceCase):
 	"""ERPNext's "Delete Company Transactions" would wipe issued comprobantes."""
 
