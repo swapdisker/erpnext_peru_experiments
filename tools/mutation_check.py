@@ -806,6 +806,27 @@ M = [
 		"u",
 		"test_identity",
 	),
+	(
+		"erpnext_peru/doctype/sunat_voucher_series/sunat_voucher_series.py",
+		"\t\tshared = series_shared_with_same_ruc(self.company, [(self.comprobante_type, self.series)])",
+		"\t\tshared = []",
+		"b",
+		"test_voucher_series",
+	),
+	(
+		"erpnext_peru/doctype/sunat_voucher_series/sunat_voucher_series.py",
+		"\treturn [row for row in rows if (row.comprobante_type, row.series) in wanted]",
+		"\treturn rows",
+		"b",
+		"test_voucher_series",
+	),
+	(
+		"overrides/company.py",
+		"\t_check_series_not_shared(doc)\n",
+		"",
+		"b",
+		"test_voucher_series",
+	),
 ]
 
 
