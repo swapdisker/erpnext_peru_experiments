@@ -674,6 +674,24 @@ class TestDebitNotes(SalesInvoiceCase):
 		with self.assertRaises(ComprobanteError):
 			self.make_debit_note(pe_comprobante_type="01", pe_debit_note_reason="01")
 
+	def test_a_debit_note_modifies_only_an_invoice_of_its_own_customer(self):
+		"""ERPNext checks "Return Against" for returns only, not for debit notes."""
+		other = make_sales_invoice(make_customer("_Test PE SI RUC 3", "6", make_ruc(30000003)).name)
+		other.submit()
+		with self.assertRaisesRegex(ComprobanteError, "same customer"):
+			self.make_debit_note(return_against=other.name, pe_debit_note_reason="02")
+
+	def test_a_debit_note_modifies_only_an_invoice_of_its_own_company(self):
+		foreign = make_sales_invoice(self.ruc_customer, company=FOREIGN_COMPANY)
+		foreign.submit()
+		with self.assertRaisesRegex(ComprobanteError, "same company"):
+			self.make_debit_note(return_against=foreign.name, pe_debit_note_reason="02")
+
+	def test_a_debit_note_modifies_only_an_issued_invoice(self):
+		draft = make_sales_invoice(self.ruc_customer)
+		with self.assertRaisesRegex(ComprobanteError, "not submitted"):
+			self.make_debit_note(return_against=draft.name, pe_debit_note_reason="02")
+
 
 class TestScope(SalesInvoiceCase):
 	def test_other_countries_are_untouched(self):

@@ -276,12 +276,7 @@ def _set_note_fields(doc):
 		doc.pe_credit_note_reason = None
 
 	if doc.get("return_against"):
-		original = frappe.db.get_value(
-			"Sales Invoice",
-			doc.return_against,
-			["pe_comprobante_type", "pe_voucher_number"],
-			as_dict=True,
-		)
+		original = _linked_original(doc)
 		# The linked invoice is authoritative. Invoices issued before this app was
 		# installed carry no voucher number: then the user fills the fields in.
 		if original and original.pe_voucher_number and original.pe_comprobante_type:
@@ -301,6 +296,41 @@ def _set_note_fields(doc):
 			throw_voucher_error(error)
 	else:
 		doc.pe_original_voucher_number = None
+
+
+def _linked_original(doc):
+	"""The invoice a note is linked to ("Return Against"), which must be one this note can modify.
+
+	ERPNext checks it for returns only: a debit note could be linked to another
+	customer's invoice, another company's, or a draft, and would then name a
+	voucher of somebody else. A note is issued to the buyer of the comprobante it
+	modifies (SUNAT, Informe N.° 033-2002).
+	"""
+	original = frappe.db.get_value(
+		"Sales Invoice",
+		doc.return_against,
+		["company", "customer", "docstatus", "pe_comprobante_type", "pe_voucher_number"],
+		as_dict=True,
+	)
+	if not original:
+		return None
+	if original.docstatus != 1:
+		frappe.throw(
+			_("{0} is not submitted: a note can only modify an invoice that was issued.").format(
+				frappe.bold(doc.return_against)
+			),
+			exc=ComprobanteError,
+		)
+	if original.company != doc.company or original.customer != doc.customer:
+		frappe.throw(
+			_(
+				"{0} was issued to {1} of company {2}: a note is issued to the same customer, by the same company, as the invoice it modifies."
+			).format(
+				frappe.bold(doc.return_against), frappe.bold(original.customer), frappe.bold(original.company)
+			),
+			exc=ComprobanteError,
+		)
+	return original
 
 
 def _fill_pos_return_reason(doc):

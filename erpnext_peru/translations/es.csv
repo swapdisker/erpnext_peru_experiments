@@ -148,3 +148,5 @@
 "Series {0} of comprobante type {1} is already registered for {2}: {3}.","La serie {0} del tipo de comprobante {1} ya está registrada para {2}: {3}.",""
 "There is no exchange rate from {0} to PEN for {1}: it is needed to check the S/ 700 limit of the Boleta de venta. Register it in Currency Exchange.","No hay tipo de cambio de {0} a PEN para el {1}: se necesita para verificar el límite de S/ 700 de la Boleta de venta. Regístrelo en Cambio de Divisas.",""
 "Another document of supplier {0} was being registered at the same moment. Save this one again.","Otro documento del proveedor {0} se estaba registrando en el mismo momento. Guarde este nuevamente.",""
+"{0} is not submitted: a note can only modify an invoice that was issued.","{0} no está validada: una nota solo puede modificar una factura que fue emitida.",""
+"{0} was issued to {1} of company {2}: a note is issued to the same customer, by the same company, as the invoice it modifies.","{0} fue emitida a {1} por la compañía {2}: una nota se emite al mismo cliente, y por la misma compañía, que la factura que modifica.",""
