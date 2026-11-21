@@ -13,7 +13,9 @@ from erpnext_peru.overrides import purchase_invoice
 from erpnext_peru.overrides.common import ComprobanteError, DuplicateVoucherError
 from erpnext_peru.tests.utils import (
 	FOREIGN_COMPANY,
+	PERU_COMPANY,
 	PeruTestCase,
+	_ensure_company,
 	make_purchase_invoice,
 	make_return,
 	make_ruc,
@@ -260,6 +262,34 @@ class TestSupplierRuc(PeruTestCase):
 		without = make_supplier("_Test PE PI Utility").name
 		invoice = make_purchase_invoice(without, pe_comprobante_type="14", pe_number="2026-7")
 		self.assertEqual(invoice.pe_voucher_number, "2026-7")
+
+
+SECOND_COMPANY = "_Test PE Second SAC"
+
+
+class TestAcrossCompanies(PeruTestCase):
+	"""A supplier's Factura has one buyer: one company of the site may book it."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		_ensure_company(SECOND_COMPANY, "_TPS", "Peru", "PEN", make_ruc(60000011))
+		frappe.db.commit()  # nosemgrep: fixture created once
+
+	def setUp(self):
+		super().setUp()
+		self.supplier = make_supplier("_Test PE PI Group Supplier", "6", make_ruc(70000021)).name
+
+	def test_a_factura_is_booked_once_on_the_site(self):
+		values = {"pe_comprobante_type": "01", "pe_series": "F001", "pe_number": "55"}
+		make_purchase_invoice(self.supplier, **values).submit()
+		with self.assertRaisesRegex(DuplicateVoucherError, PERU_COMPANY):
+			make_purchase_invoice(self.supplier, company=SECOND_COMPANY, **values)
+
+	def test_other_documents_once_per_company(self):
+		values = {"pe_comprobante_type": "14", "pe_number": "2026-7"}
+		make_purchase_invoice(self.supplier, **values).submit()
+		make_purchase_invoice(self.supplier, company=SECOND_COMPANY, **values).submit()
 
 
 class TestConcurrentRegistration(PeruTestCase):

@@ -181,7 +181,12 @@ def _set_original_reference(doc):
 
 
 def _check_duplicate(doc):
-	"""The same supplier document must not be booked twice in a company.
+	"""The same supplier document must not be booked twice.
+
+	A Factura, Boleta or note is booked once on the whole site: its number is
+	unique for its issuer and it has one buyer, so a second company booking it
+	takes an IGV credit that is not its own. Other documents, whose numbers
+	follow no common rule, once per company.
 
 	Two users registering it at the same moment would both find nothing and
 	both book its IGV credit. So the documents of one supplier are checked one
@@ -203,10 +208,11 @@ def _check_duplicate(doc):
 			)
 	if existing:
 		frappe.throw(
-			_("Comprobante {0} of supplier {1} is already registered in {2}.").format(
+			_("Comprobante {0} of supplier {1} is already registered in {2}, of company {3}.").format(
 				frappe.bold(doc.pe_voucher_number),
 				frappe.bold(doc.supplier),
-				get_link_to_form("Purchase Invoice", existing),
+				get_link_to_form("Purchase Invoice", existing.name),
+				frappe.bold(existing.company),
 			),
 			exc=DuplicateVoucherError,
 			title=_("Duplicate Comprobante"),
@@ -217,7 +223,7 @@ def _check_duplicate(doc):
 VOUCHER_INDEX = "pe_voucher_number_index"
 
 
-def _registered_elsewhere(doc) -> str | None:
+def _registered_elsewhere(doc):
 	"""Another Purchase Invoice, not cancelled, booking the same supplier document.
 
 	A locking read, through the voucher number's index only: scanned through
@@ -230,11 +236,18 @@ def _registered_elsewhere(doc) -> str | None:
 		if frappe.db.has_index("tabPurchase Invoice", VOUCHER_INDEX)
 		else ""
 	)
+	in_this_company = "" if doc.pe_comprobante_type in ISSUABLE_TYPES else "and company = %(company)s"
 	rows = frappe.db.sql(
-		f"""select name from `tabPurchase Invoice` {hint}
-		where pe_voucher_number = %s and company = %s and supplier = %s
-		and pe_comprobante_type = %s and docstatus < 2
+		f"""select name, company from `tabPurchase Invoice` {hint}
+		where pe_voucher_number = %(voucher)s and supplier = %(supplier)s
+		and pe_comprobante_type = %(type)s and docstatus < 2 {in_this_company}
 		for update""",
-		(doc.pe_voucher_number, doc.company, doc.supplier, doc.pe_comprobante_type),
+		{
+			"voucher": doc.pe_voucher_number,
+			"supplier": doc.supplier,
+			"type": doc.pe_comprobante_type,
+			"company": doc.company,
+		},
+		as_dict=True,
 	)
-	return next((name for (name,) in rows if name != doc.name), None)
+	return next((row for row in rows if row.name != doc.name), None)

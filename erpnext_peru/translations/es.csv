@@ -45,7 +45,6 @@
 "A purchase return must be registered with comprobante type 07 - Nota de crédito.","Una devolución de compra debe registrarse con el tipo de comprobante 07 - Nota de crédito.",""
 "A supplier's credit note (type 07) must be registered as a return: tick 'Is Return (Debit Note)'.","La nota de crédito de un proveedor (tipo 07) debe registrarse como devolución: marque 'Es devolución (Nota de débito)'.",""
 "Duplicate Comprobante","Comprobante duplicado",""
-"Comprobante {0} of supplier {1} is already registered in {2}.","El comprobante {0} del proveedor {1} ya está registrado en {2}.",""
 "Select the comprobante type of the supplier's document {0}.","Seleccione el tipo de comprobante del documento {0} del proveedor.",""
 "Identity Document Type","Tipo de documento de identidad",""
 "Duplicate Identity Document","Documento de identidad duplicado",""
@@ -156,3 +155,4 @@
 "Series {0} is the company's series for comprobante type {1}, not {2}: check the type of the comprobante the note modifies.","La serie {0} es la serie de la compañía para el tipo de comprobante {1}, no {2}: revise el tipo del comprobante que modifica la nota.",""
 "Supplier {0} has no RUC. A comprobante of type {1} always carries the RUC of whoever issued it: register it on the supplier first (identity document type 6).","El proveedor {0} no tiene RUC. Un comprobante del tipo {1} siempre lleva el RUC de quien lo emite: regístrelo primero en el proveedor (tipo de documento de identidad 6).",""
 "Supplier Without RUC","Proveedor sin RUC",""
+"Comprobante {0} of supplier {1} is already registered in {2}, of company {3}.","El comprobante {0} del proveedor {1} ya está registrado en {2}, de la compañía {3}.",""
