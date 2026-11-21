@@ -214,6 +214,30 @@ class TestDefaultsAndNumbering(SalesInvoiceCase):
 				self.assertEqual(doc.pe_voucher_number, "F001-00000001")
 				self.assertEqual(doc.pe_customer_identity_number, make_ruc(30000001))
 
+	def test_type_follows_a_change_of_customer(self):
+		invoice = make_sales_invoice(self.dni_customer)
+		self.assertEqual((invoice.pe_comprobante_type, invoice.pe_series), ("03", "B001"))
+		invoice.customer = self.ruc_customer
+		invoice.save()
+		self.assertEqual((invoice.pe_comprobante_type, invoice.pe_series), ("01", "F001"))
+		invoice.customer = self.anonymous
+		invoice.save()
+		self.assertEqual((invoice.pe_comprobante_type, invoice.pe_series), ("03", "B001"))
+
+	def test_type_follows_a_customer_changed_just_before_submission(self):
+		"""The point of sale saves the draft at checkout and lets the cashier edit the cart."""
+		invoice = make_sales_invoice(self.ruc_customer)
+		invoice.customer = self.dni_customer
+		invoice.submit()
+		self.assertEqual(invoice.pe_voucher_number, "B001-00000001")
+
+	def test_a_type_chosen_by_hand_is_kept_when_the_customer_changes(self):
+		other_ruc = make_customer("_Test PE SI RUC 2", "6", make_ruc(30000002)).name
+		invoice = make_sales_invoice(self.ruc_customer, pe_comprobante_type="03")
+		invoice.customer = other_ruc
+		invoice.save()
+		self.assertEqual(invoice.pe_comprobante_type, "03")
+
 	def test_boleta_to_a_ruc_customer_warns(self):
 		frappe.clear_messages()
 		make_sales_invoice(self.ruc_customer)  # Factura: no warning

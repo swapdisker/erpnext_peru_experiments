@@ -187,16 +187,35 @@ def _snapshot_customer_identity(doc):
 
 
 def _set_default_type(doc):
-	if doc.pe_comprobante_type:
+	if doc.pe_comprobante_type and not _type_left_from_previous_save(doc):
 		return
-	if cint(doc.is_return):
-		doc.pe_comprobante_type = TYPE_CREDIT_NOTE
-	elif cint(doc.get("is_debit_note")):
-		doc.pe_comprobante_type = TYPE_DEBIT_NOTE
-	elif doc.pe_customer_identity_type == DOC_RUC:
-		doc.pe_comprobante_type = TYPE_FACTURA
-	else:
-		doc.pe_comprobante_type = TYPE_BOLETA
+	doc.pe_comprobante_type = _default_type(doc)
+
+
+def _default_type(doc) -> str:
+	if cint(doc.get("is_return")):
+		return TYPE_CREDIT_NOTE
+	if cint(doc.get("is_debit_note")):
+		return TYPE_DEBIT_NOTE
+	if doc.get("pe_customer_identity_type") == DOC_RUC:
+		return TYPE_FACTURA
+	return TYPE_BOLETA
+
+
+def _type_left_from_previous_save(doc) -> bool:
+	"""True when the type was given automatically and what decided it has changed since.
+
+	A draft saved for a customer without RUC gets a Boleta; switched to a
+	customer with RUC, it becomes a Factura instead of keeping the Boleta (the
+	point of sale has no field to change it). A type that differs from the
+	default, or that was changed in this save, is the user's choice and is kept.
+	"""
+	if doc.is_new():
+		return False
+	before = doc.get_doc_before_save()
+	if not before or before.get("pe_comprobante_type") != doc.pe_comprobante_type:
+		return False
+	return doc.pe_comprobante_type == _default_type(before) != _default_type(doc)
 
 
 def _warn_boleta_to_ruc_customer(doc):
