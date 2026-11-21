@@ -24,6 +24,7 @@ from erpnext_peru.overrides.common import (
 	is_peru_invoice,
 	throw_voucher_error,
 )
+from erpnext_peru.utils.identity import DOC_RUC
 from erpnext_peru.utils.voucher import (
 	ISSUABLE_TYPES,
 	NOTE_TYPES,
@@ -76,6 +77,8 @@ def validate(doc, method=None):
 			),
 			exc=ComprobanteError,
 		)
+	if comprobante_type in ISSUABLE_TYPES:
+		_check_supplier_has_ruc(doc, comprobante_type)
 
 	try:
 		series, number = validate_received_voucher(comprobante_type, series, number)
@@ -103,6 +106,25 @@ def before_submit(doc, method=None):
 				"Indicate the comprobante this note modifies: its type and its number (for example F001-00000123)."
 			),
 			exc=ComprobanteError,
+		)
+
+
+def _check_supplier_has_ruc(doc, comprobante_type):
+	"""Facturas, Boletas and their notes carry the issuer's RUC: their supplier must have it.
+
+	Booked against a supplier without it, the same document could be booked
+	again under a second record of the same supplier, and its IGV credit twice.
+	A supplier's RUC is unique among the suppliers.
+	"""
+	if not doc.supplier:
+		return  # ERPNext asks for the supplier
+	if frappe.db.get_value("Supplier", doc.supplier, "pe_identity_type") != DOC_RUC:
+		frappe.throw(
+			_(
+				"Supplier {0} has no RUC. A comprobante of type {1} always carries the RUC of whoever issued it: register it on the supplier first (identity document type 6)."
+			).format(frappe.bold(doc.supplier), comprobante_type),
+			exc=ComprobanteError,
+			title=_("Supplier Without RUC"),
 		)
 
 

@@ -230,6 +230,38 @@ class TestPurchaseInvoice(PeruTestCase):
 		self.assertEqual(invoice.docstatus, 1)
 
 
+class TestSupplierRuc(PeruTestCase):
+	"""Facturas, Boletas and their notes are issued by RUC holders, with the RUC on them."""
+
+	def setUp(self):
+		super().setUp()
+		self.supplier = make_supplier("_Test PE PI Ruc Supplier", "6", make_ruc(70000011)).name
+
+	def test_the_same_factura_cannot_be_booked_under_a_second_supplier_record(self):
+		"""The duplicate check is by supplier; a record without the RUC would get around it."""
+		make_purchase_invoice(
+			self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number="55"
+		).submit()
+		second = make_supplier("_Test PE PI Ruc Supplier (old)").name
+		with self.assertRaisesRegex(ComprobanteError, "has no RUC"):
+			make_purchase_invoice(second, pe_comprobante_type="01", pe_series="F001", pe_number="55")
+
+	def test_every_comprobante_type_of_a_ruc_holder_needs_it(self):
+		with_dni = make_supplier("_Test PE PI Dni Supplier", "1", "45000011").name
+		for comprobante_type in ("01", "03", "08"):
+			with self.subTest(comprobante_type=comprobante_type):
+				with self.assertRaisesRegex(ComprobanteError, "has no RUC"):
+					make_purchase_invoice(
+						with_dni, pe_comprobante_type=comprobante_type, pe_series="F001", pe_number="1"
+					)
+
+	def test_the_check_covers_facturas_boletas_and_their_notes_only(self):
+		"""Other documents keep the loose rules of this stage (here a utility bill, type 14)."""
+		without = make_supplier("_Test PE PI Utility").name
+		invoice = make_purchase_invoice(without, pe_comprobante_type="14", pe_number="2026-7")
+		self.assertEqual(invoice.pe_voucher_number, "2026-7")
+
+
 class TestConcurrentRegistration(PeruTestCase):
 	"""Several connections register the same supplier document at once.
 
