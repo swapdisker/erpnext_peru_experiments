@@ -568,15 +568,14 @@ def _validate_igv_is_stated(doc):
 	ERPNext only pre-selects the default tax template in the browser. A document
 	created through the API, an import or another app arrives with no tax rows
 	and would otherwise be issued without IGV by omission. Exempt, unaffected
-	and export sales state it with one of the 0% templates.
+	and export sales state it with one of the 0% templates. A row of another
+	kind (a freight charge, say) states nothing about IGV: one row must use an
+	account of the company's IGV templates.
 	"""
-	if doc.get("taxes"):
+	igv_accounts = _igv_accounts(doc.company)
+	if not igv_accounts:
 		return
-	has_igv_setup = frappe.db.exists(
-		"Sales Taxes and Charges Template",
-		{"company": doc.company, "disabled": 0, "pe_igv_affectation_type": ("is", "set")},
-	)
-	if not has_igv_setup:
+	if any(row.get("account_head") in igv_accounts for row in doc.get("taxes") or []):
 		return
 	frappe.throw(
 		_(
@@ -584,6 +583,24 @@ def _validate_igv_is_stated(doc):
 		),
 		exc=ComprobanteError,
 		title=_("IGV Not Stated"),
+	)
+
+
+def _igv_accounts(company: str) -> set:
+	"""Accounts of the company's enabled IGV templates (those with an affectation type)."""
+	templates = frappe.get_all(
+		"Sales Taxes and Charges Template",
+		filters={"company": company, "disabled": 0, "pe_igv_affectation_type": ("is", "set")},
+		pluck="name",
+	)
+	if not templates:
+		return set()
+	return set(
+		frappe.get_all(
+			"Sales Taxes and Charges",
+			filters={"parenttype": "Sales Taxes and Charges Template", "parent": ("in", templates)},
+			pluck="account_head",
+		)
 	)
 
 

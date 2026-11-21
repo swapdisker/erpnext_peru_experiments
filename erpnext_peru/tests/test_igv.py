@@ -355,6 +355,22 @@ class TestSalesWithIgv(IgvCase):
 		self.assertIn("IGV", str(ctx.exception))
 		self.assertEqual(frappe.db.get_value("Sales Invoice", invoice.name, "docstatus"), 0)
 
+	def test_an_invoice_whose_only_tax_row_is_not_igv_is_blocked(self):
+		"""A freight charge states nothing about IGV."""
+		invoice = sales_invoice(self.customer, [(1, 1000)], template=None)
+		invoice.append(
+			"taxes",
+			{
+				"charge_type": "Actual",
+				"account_head": pcge_account("7599"),
+				"tax_amount": 10,
+				"description": "Flete",
+			},
+		)
+		invoice.save()
+		with self.assertRaisesRegex(ComprobanteError, "IGV"):
+			invoice.submit()
+
 	def test_credit_note_reverses_the_igv(self):
 		invoice = sales_invoice(self.customer, [(1, 1000)])
 		invoice.submit()
