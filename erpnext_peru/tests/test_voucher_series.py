@@ -14,9 +14,11 @@ from erpnext_peru.erpnext_peru.doctype.sunat_voucher_series.sunat_voucher_series
 )
 from erpnext_peru.overrides.common import ComprobanteError, SeriesBusyError
 from erpnext_peru.tests.utils import (
+	COMPANY_RUC,
 	FOREIGN_COMPANY,
 	PERU_COMPANY,
 	PeruTestCase,
+	_ensure_company,
 	make_customer,
 	make_ruc,
 	make_sales_invoice,
@@ -140,6 +142,40 @@ class TestVoucherSeries(PeruTestCase):
 		self.assertEqual(get_enabled_series(PERU_COMPANY, "07", "F"), ["FC01"])
 		self.assertEqual(get_enabled_series(PERU_COMPANY, "07", "B"), ["BC01"])
 		self.assertEqual(get_enabled_series(PERU_COMPANY, "01"), [])
+
+
+BRANCH_COMPANY = "_Test PE Branch SAC"
+
+
+class TestSameRucCompanies(PeruTestCase):
+	"""Two companies can stand for one taxpayer; SUNAT knows only the RUC."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		_ensure_company(BRANCH_COMPANY, "_TPB", "Peru", "PEN", make_ruc(60000013))
+		frappe.db.commit()  # nosemgrep: fixture created once
+
+	def share_the_ruc(self):
+		frappe.db.set_value("Company", BRANCH_COMPANY, "tax_id", COMPANY_RUC)
+		frappe.clear_cache(doctype="Company")
+		self.addCleanup(frappe.clear_cache, doctype="Company")
+
+	def test_a_series_of_a_company_with_the_same_ruc_is_refused(self):
+		make_series("01", "F001")
+		self.share_the_ruc()
+		with self.assertRaisesRegex(frappe.DuplicateEntryError, "same RUC"):
+			make_series("01", "F001", company=BRANCH_COMPANY)
+		make_series("01", "F002", company=BRANCH_COMPANY)  # another series
+		make_series("07", "F001", company=BRANCH_COMPANY)  # another type
+
+	def test_giving_a_company_the_ruc_of_one_that_uses_its_series_is_refused(self):
+		make_series("01", "F001")
+		make_series("01", "F001", company=BRANCH_COMPANY)
+		branch = frappe.get_doc("Company", BRANCH_COMPANY)
+		branch.tax_id = COMPANY_RUC
+		with self.assertRaisesRegex(frappe.DuplicateEntryError, "same RUC"):
+			branch.save()
 
 
 class TestCounterLock(PeruTestCase):

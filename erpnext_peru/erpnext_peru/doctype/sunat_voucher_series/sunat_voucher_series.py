@@ -86,6 +86,14 @@ class SUNATVoucherSeries(Document):
 				),
 				frappe.DuplicateEntryError,
 			)
+		shared = series_shared_with_same_ruc(self.company, [(self.comprobante_type, self.series)])
+		if shared:
+			frappe.throw(
+				_(
+					"Series {0} of comprobante type {1} is already registered for {2}, which has the same RUC: SUNAT identifies a comprobante by the RUC, the type, the series and the number, so the two companies would issue the same vouchers. Use another series."
+				).format(frappe.bold(self.series), self.comprobante_type, frappe.bold(shared[0].company)),
+				frappe.DuplicateEntryError,
+			)
 
 	def on_trash(self):
 		if get_highest_used_number(self.company, self.comprobante_type, self.series):
@@ -94,6 +102,31 @@ class SUNATVoucherSeries(Document):
 					"Series {0} cannot be deleted because vouchers have been issued with it. Disable it instead."
 				).format(frappe.bold(self.series))
 			)
+
+
+def series_shared_with_same_ruc(company: str, series: list[tuple[str, str]], ruc: str | None = None) -> list:
+	"""Series records of other companies with the same RUC, among (type, series) pairs.
+
+	Two ERPNext companies can stand for one taxpayer (a branch kept as a
+	company, say). Each has its own counters, so a series registered in both
+	would hand out the same voucher numbers twice. ``ruc`` defaults to the
+	company's stored one.
+	"""
+	if ruc is None:
+		ruc = frappe.get_cached_value("Company", company, "tax_id")
+	ruc = (ruc or "").strip()
+	if not ruc or not series:
+		return []
+	others = frappe.get_all("Company", filters={"tax_id": ruc, "name": ("!=", company)}, pluck="name")
+	if not others:
+		return []
+	rows = frappe.get_all(
+		"SUNAT Voucher Series",
+		filters={"company": ("in", others), "series": ("in", sorted({code for _type, code in series}))},
+		fields=["name", "company", "comprobante_type", "series"],
+	)
+	wanted = set(series)
+	return [row for row in rows if (row.comprobante_type, row.series) in wanted]
 
 
 def get_highest_used_number(company: str, comprobante_type: str, series: str) -> int:
