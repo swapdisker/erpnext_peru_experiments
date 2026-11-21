@@ -12,6 +12,7 @@ from erpnext_peru.tests.utils import (
 	FOREIGN_COMPANY,
 	PERU_COMPANY,
 	PeruTestCase,
+	_ensure_company,
 	make_customer,
 	make_return,
 	make_ruc,
@@ -908,10 +909,78 @@ class TestTransactionDeletion(SalesInvoiceCase):
 
 	def test_the_tool_calls_it(self):
 		hooks = frappe.get_hooks("doc_events", app_name="erpnext_peru")
+		for event in ("before_submit", "before_update_after_submit"):
+			self.assertEqual(
+				hooks["Transaction Deletion Record"][event],
+				["erpnext_peru.overrides.transaction_deletion.before_submit"],
+			)
+
+
+DELETION_COMPANY = "_Test PE Deletion SAC"
+
+
+class TestTransactionDeletionTool(SalesInvoiceCase):
+	"""ERPNext's own tool, on a company of its own: it deletes everything the company has.
+
+	The deletion runs in the test's transaction and is rolled back with it.
+	"""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		_ensure_company(DELETION_COMPANY, "_TPD", "Peru", "PEN", make_ruc(60000009))
+		frappe.db.commit()  # nosemgrep: fixture created once
+
+	def deletion(self):
+		record = frappe.get_doc(
+			{
+				"doctype": "Transaction Deletion Record",
+				"company": DELETION_COMPANY,
+				"process_in_single_transaction": 1,
+			}
+		).insert()
+		record.generate_to_delete_list()
+		record.reload()
+		self.addCleanup(record._clear_deletion_cache)
+		return record
+
+	def to_delete(self, record):
+		return [row.doctype_name for row in record.doctypes_to_delete]
+
+	def test_series_are_kept(self):
+		"""Its last number may continue a previous system's numbering before any voucher is issued here."""
+		make_series("03", "B001", company=DELETION_COMPANY, current_number=1500)
+		record = self.deletion()
+		self.assertIn("Sales Invoice", self.to_delete(record))
+		self.assertNotIn("SUNAT Voucher Series", self.to_delete(record))
+		record.submit()
+		self.assertEqual(record.reload().status, "Completed")
 		self.assertEqual(
-			hooks["Transaction Deletion Record"]["before_submit"],
-			["erpnext_peru.overrides.transaction_deletion.before_submit"],
+			frappe.db.get_value(
+				"SUNAT Voucher Series", {"company": DELETION_COMPANY, "series": "B001"}, "current_number"
+			),
+			1500,
 		)
+
+	def test_series_added_to_the_list_by_hand_are_refused(self):
+		record = self.deletion()
+		record.append(
+			"doctypes_to_delete", {"doctype_name": "SUNAT Voucher Series", "company_field": "company"}
+		)
+		record.save()
+		with self.assertRaisesRegex(ComprobanteError, "keeps its last number"):
+			record.submit()
+
+	def test_a_retry_after_comprobantes_were_issued_is_refused(self):
+		record = self.deletion()
+		record.submit()
+		record.db_set("status", "Failed")  # as if a step had failed
+		make_series("03", "B001", company=DELETION_COMPANY)
+		invoice = make_sales_invoice(self.dni_customer, rate=50, company=DELETION_COMPANY)
+		invoice.submit()
+		with self.assertRaisesRegex(ComprobanteError, "cannot be deleted"):
+			record.start_deletion_tasks()
+		self.assertTrue(frappe.db.exists("Sales Invoice", invoice.name))
 
 
 class TestModifiedTypeField(PeruTestCase):

@@ -22,6 +22,10 @@ before_install = "erpnext_peru.setup.install.before_install"
 after_install = "erpnext_peru.setup.install.after_install"
 after_migrate = "erpnext_peru.setup.install.after_migrate"
 
+# Kept by ERPNext's "Delete Company Transactions": a series carries the last
+# number issued, which may continue the numbering of a previous system.
+company_data_to_be_ignored = ["SUNAT Voucher Series"]
+
 # The tests need a site on which the ERPNext setup wizard has run.
 before_tests = "erpnext_peru.tests.utils.prepare_site"
 
@@ -46,9 +50,11 @@ doc_events = {
 		"before_submit": "erpnext_peru.overrides.sales_invoice.before_submit",
 		"on_trash": "erpnext_peru.overrides.sales_invoice.on_trash",
 	},
-	# ERPNext's "Delete Company Transactions"
+	# ERPNext's "Delete Company Transactions". Its "Retry" of a failed deletion
+	# saves the submitted record instead of submitting it again.
 	"Transaction Deletion Record": {
 		"before_submit": "erpnext_peru.overrides.transaction_deletion.before_submit",
+		"before_update_after_submit": "erpnext_peru.overrides.transaction_deletion.before_submit",
 	},
 	"Purchase Invoice": {
 		"validate": "erpnext_peru.overrides.purchase_invoice.validate",

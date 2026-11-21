@@ -144,5 +144,6 @@
 "ERPNext Peru requires {0} version {1}. This bench has version {2}.","ERPNext Peru requiere {0} versión {1}. Este bench tiene la versión {2}.",""
 "The transactions of {0} cannot be deleted: {1} comprobantes have been issued with their numbers, and they must remain on record.","No se pueden eliminar las transacciones de {0}: se emitieron {1} comprobantes con su número y deben conservarse.",""
 "Comprobantes Issued","Comprobantes emitidos",""
+"{0} is not deleted with the transactions: each series keeps its last number issued. Remove it from DocTypes To Delete.","El tipo de documento {0} no se elimina con las transacciones: cada serie conserva su último número emitido. Quítelo de Tipos de documento a eliminar.",""
 "Series {0} of comprobante type {1} is already registered for {2}: {3}.","La serie {0} del tipo de comprobante {1} ya está registrada para {2}: {3}.",""
 "There is no exchange rate from {0} to PEN for {1}: it is needed to check the S/ 700 limit of the Boleta de venta. Register it in Currency Exchange.","No hay tipo de cambio de {0} a PEN para el {1}: se necesita para verificar el límite de S/ 700 de la Boleta de venta. Regístrelo en Cambio de Divisas.",""
