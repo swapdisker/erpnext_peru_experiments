@@ -448,8 +448,7 @@ def _import_client_accounts(company: str, rows: list[dict], prefer_client_names:
 			continue
 		if not name:
 			report.rejected.append({"line": line, "code": code, "reason": "name_missing"})
-			if code not in existing:
-				blocked.add(code)
+			blocked.add(code)  # an existing account still takes its children: see _import_one
 			continue
 		if code in seen:
 			report.rejected.append(
