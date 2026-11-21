@@ -424,7 +424,7 @@ M = [
 	("overrides/sales_invoice.py", "	_validate_igv_is_stated(doc)\n", "", "b", "test_igv"),
 	(
 		"overrides/sales_invoice.py",
-		"	if not has_igv_setup:\n		return\n",
+		"	if not igv_accounts:\n		return\n",
 		"",
 		"b",
 		"test_sales_invoice",
@@ -826,6 +826,13 @@ M = [
 		"",
 		"b",
 		"test_voucher_series",
+	),
+	(
+		"overrides/sales_invoice.py",
+		'	if any(row.get("account_head") in igv_accounts for row in doc.get("taxes") or []):',
+		'	if doc.get("taxes"):',
+		"b",
+		"test_igv",
 	),
 ]
 
