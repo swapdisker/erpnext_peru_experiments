@@ -834,6 +834,25 @@ class TestMergedPosInvoices(SalesInvoiceCase):
 		doc.db_insert()
 		return name
 
+	def merge_log(self, pos_invoices, name="_TEST-PE-MERGE-1"):
+		"""A submitted POS Invoice Merge Log listing them, as when a shift is closed."""
+		log = frappe.get_doc(
+			{
+				"doctype": "POS Invoice Merge Log",
+				"company": PERU_COMPANY,
+				"customer": self.anonymous,
+				"posting_date": frappe.utils.today(),
+				"docstatus": 1,
+				"pos_invoices": [{"pos_invoice": pos_invoice} for pos_invoice in pos_invoices],
+			}
+		)
+		log.name = name
+		log.db_insert()
+		for row in log.pos_invoices:
+			row.parent, row.docstatus = log.name, 1
+			row.db_insert()
+		return log
+
 	def build(self, pos_invoices, rate=50, qty=30):
 		"""A draft shaped like the one ERPNext's POS Invoice Merge Log creates."""
 		template = make_sales_invoice(self.anonymous, rate=rate, qty=qty)
@@ -850,6 +869,7 @@ class TestMergedPosInvoices(SalesInvoiceCase):
 	def test_merged_invoice_of_a_shift_is_not_a_comprobante(self):
 		"""S/ 3,000 to the walk-in customer: as a Boleta it would be refused."""
 		pos = [self.submitted_pos_invoice("_TEST-PE-POS-1"), self.submitted_pos_invoice("_TEST-PE-POS-2")]
+		self.merge_log(pos)
 		invoice = self.build(pos)
 		invoice.insert()
 		invoice.submit()
@@ -878,6 +898,26 @@ class TestMergedPosInvoices(SalesInvoiceCase):
 				self.assertEqual(invoice.pe_comprobante_type, "03")
 				with self.assertRaises(ComprobanteError):
 					invoice.submit()  # anonymous Boleta above S/ 700
+
+	def test_pos_invoices_not_being_merged_do_not_exempt(self):
+		"""Submitted POS Invoices, but no merge log: a sale made to look like a merged one."""
+		pos = self.submitted_pos_invoice("_TEST-PE-POS-6")
+		invoice = self.build([pos])
+		invoice.insert()
+		self.assertEqual(invoice.pe_comprobante_type, "03")
+		with self.assertRaises(ComprobanteError):
+			invoice.submit()  # anonymous Boleta above S/ 700
+
+	def test_pos_invoices_of_an_earlier_shift_do_not_exempt(self):
+		"""Already merged into another invoice, and in a merge log: they still do not exempt a new sale."""
+		pos = self.submitted_pos_invoice("_TEST-PE-POS-7")
+		self.merge_log([pos])
+		frappe.db.set_value("POS Invoice", pos, "consolidated_invoice", "ACC-SINV-EARLIER-SHIFT")
+		invoice = self.build([pos])
+		invoice.insert()
+		self.assertEqual(invoice.pe_comprobante_type, "03")
+		with self.assertRaises(ComprobanteError):
+			invoice.submit()
 
 	def test_draft_pos_invoice_does_not_exempt(self):
 		submitted = self.submitted_pos_invoice("_TEST-PE-POS-4")

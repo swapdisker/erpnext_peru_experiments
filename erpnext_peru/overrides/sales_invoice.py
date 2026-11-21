@@ -79,19 +79,35 @@ def is_merged_pos_invoice(doc) -> bool:
 	the counter needs its own, which this app does not issue yet. Applying the
 	rules to it would only make the shift impossible to close.
 
-	``is_consolidated`` alone is not trusted, because an API client can set it:
-	every item must also come from a submitted POS Invoice.
+	``is_consolidated`` alone is not trusted, because an API client can set it,
+	and neither are POS Invoices on the items: those of an earlier shift would do.
+	ERPNext creates and submits the merged invoice while it submits the POS
+	Invoice Merge Log, before it marks the POS Invoices as consolidated. So every
+	item must come from a submitted POS Invoice that is listed in a submitted
+	merge log and is not consolidated into another invoice yet.
 	"""
 	if not cint(doc.get("is_consolidated")):
 		return False
 	pos_invoices = {row.get("pos_invoice") for row in doc.get("items") or []}
 	if not pos_invoices:
 		return False
+	names = list(pos_invoices)
 	# An item without a POS Invoice (None) never appears among the submitted ones.
 	submitted = frappe.get_all(
-		"POS Invoice", filters={"name": ("in", list(pos_invoices)), "docstatus": 1}, pluck="name"
+		"POS Invoice",
+		filters={"name": ("in", names), "docstatus": 1},
+		fields=["name", "consolidated_invoice"],
 	)
-	return set(submitted) == pos_invoices
+	if {row.name for row in submitted} != pos_invoices:
+		return False
+	if any(row.consolidated_invoice and row.consolidated_invoice != doc.name for row in submitted):
+		return False
+	being_merged = frappe.get_all(
+		"POS Invoice Reference",
+		filters={"parenttype": "POS Invoice Merge Log", "pos_invoice": ("in", names), "docstatus": 1},
+		pluck="pos_invoice",
+	)
+	return set(being_merged) == pos_invoices
 
 
 def _is_submitted_in_database(doc) -> bool:
