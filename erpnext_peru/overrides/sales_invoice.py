@@ -592,7 +592,7 @@ def _validate_customer_identity(doc):
 			)
 	elif governing_type == TYPE_BOLETA:
 		total = _total_in_soles(doc)
-		if total > BOLETA_ID_THRESHOLD and not (identity_type and identity_number):
+		if total > BOLETA_ID_THRESHOLD and not _identifies(identity_type, identity_number):
 			frappe.throw(
 				_(
 					"A Boleta de venta above S/ {0} must identify the customer. Register the identity document (DNI, carnet de extranjería, passport...) of customer {1}."
@@ -600,6 +600,17 @@ def _validate_customer_identity(doc):
 				exc=ComprobanteError,
 				title=_("Customer Identity Required"),
 			)
+
+
+def _identifies(identity_type, identity_number) -> bool:
+	"""True when the document names a buyer.
+
+	Some systems register "clientes varios" with 00000000 or "-" as the number:
+	that is allowed on a customer, but above S/ 700 the law asks for the buyer's
+	own document, and no document is made of zeros and dashes only.
+	"""
+	number = (identity_number or "").strip()
+	return bool(identity_type) and bool(number.strip("0-"))
 
 
 def _total_in_soles(doc) -> float:

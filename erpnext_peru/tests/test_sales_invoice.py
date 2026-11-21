@@ -955,6 +955,25 @@ class TestPosReturns(SalesInvoiceCase):
 		self.assertEqual(_pos_return_reason(note), "07")
 
 
+class TestPlaceholderDocuments(SalesInvoiceCase):
+	"""Above S/ 700 a Boleta names its buyer; "clientes varios" placeholders do not."""
+
+	def test_zeros_or_a_dash_do_not_identify_the_buyer(self):
+		for identity_type, number in (("1", "00000000"), ("0", "-"), ("0", "0")):
+			with self.subTest(number=number):
+				customer = make_customer(
+					f"_Test PE Varios {identity_type}{number}", identity_type, number
+				).name
+				make_sales_invoice(customer, rate=700).submit()  # up to S/ 700: allowed
+				boleta = make_sales_invoice(customer, rate=700.01)
+				with self.assertRaisesRegex(ComprobanteError, "must identify the customer"):
+					boleta.submit()
+
+	def test_a_real_document_with_zeros_still_identifies(self):
+		customer = make_customer("_Test PE Zeros", "1", "00012345").name
+		make_sales_invoice(customer, rate=1500).submit()
+
+
 class TestTotalInSoles(SalesInvoiceCase):
 	"""The S/ 700 limit is in soles, whatever currency the company keeps its books in."""
 
