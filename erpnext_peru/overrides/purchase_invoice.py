@@ -12,6 +12,10 @@ import frappe
 from frappe import _
 from frappe.utils import cint, get_link_to_form
 
+from erpnext_peru.erpnext_peru.doctype.sunat_voucher_series.sunat_voucher_series import (
+	_is_concurrent_change,
+	_locking_read_sees_latest,
+)
 from erpnext_peru.overrides.common import (
 	COMPROBANTE_TYPE_DOCTYPE,
 	ComprobanteError,
@@ -155,7 +159,13 @@ def _set_original_reference(doc):
 
 
 def _check_duplicate(doc):
-	"""The same supplier document must not be booked twice in a company."""
+	"""The same supplier document must not be booked twice in a company.
+
+	Two users registering it at the same moment would both find nothing and
+	both book its IGV credit. So the documents of one supplier are checked one
+	at a time: the supplier's row is locked until the transaction ends, and the
+	check is a locking read, which sees what the previous registration committed.
+	"""
 	filters = {
 		"company": doc.company,
 		"supplier": doc.supplier,
@@ -165,7 +175,19 @@ def _check_duplicate(doc):
 	}
 	if doc.name:
 		filters["name"] = ("!=", doc.name)
-	existing = frappe.db.get_value("Purchase Invoice", filters, "name")
+	with _locking_read_sees_latest():
+		try:
+			frappe.db.sql("select name from `tabSupplier` where name = %s for update", (doc.supplier,))
+			existing = frappe.db.get_value("Purchase Invoice", filters, "name", for_update=True)
+		except Exception as error:
+			if not _is_concurrent_change(error):
+				raise
+			frappe.throw(
+				_(
+					"Another document of supplier {0} was being registered at the same moment. Save this one again."
+				).format(frappe.bold(doc.supplier)),
+				exc=ComprobanteError,
+			)
 	if existing:
 		frappe.throw(
 			_("Comprobante {0} of supplier {1} is already registered in {2}.").format(

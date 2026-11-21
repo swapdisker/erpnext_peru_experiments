@@ -2,6 +2,8 @@
 # License: GNU General Public License v3. See license.txt
 """Supplier comprobante fields on Purchase Invoices."""
 
+import threading
+
 import frappe
 from frappe.utils import flt
 
@@ -223,3 +225,93 @@ class TestPurchaseInvoice(PeruTestCase):
 		self.assertIsNone(invoice.pe_voucher_number)
 		invoice.submit()
 		self.assertEqual(invoice.docstatus, 1)
+
+
+class TestConcurrentRegistration(PeruTestCase):
+	"""Several connections register the same supplier document at once.
+
+	These tests commit, so they use a supplier of their own and clean up after
+	themselves.
+	"""
+
+	SUPPLIER = "_Test PE PI Concurrent"
+
+	def setUp(self):
+		super().setUp()
+		self._cleanup()
+		self.supplier = make_supplier(self.SUPPLIER, "6", make_ruc(70000099)).name
+		frappe.db.commit()
+
+	def tearDown(self):
+		frappe.db.rollback()
+		self._cleanup()
+		super().tearDown()
+
+	def _cleanup(self):
+		for name in frappe.get_all("Purchase Invoice", {"supplier": self.SUPPLIER}, pluck="name"):
+			frappe.db.delete("Purchase Invoice Item", {"parent": name})
+			frappe.db.delete("Purchase Taxes and Charges", {"parent": name})
+			frappe.db.delete("Purchase Invoice", {"name": name})
+		frappe.db.delete("Supplier", {"name": self.SUPPLIER})
+		frappe.db.commit()
+
+	def _run_threads(self, target, count):
+		site = frappe.local.site
+		results, errors = [], []
+		barrier = threading.Barrier(count)
+
+		def worker(index):
+			frappe.init(site=site)
+			frappe.connect()
+			try:
+				frappe.set_user("Administrator")
+				frappe.db.sql("select 1")  # the transaction has already read something
+				barrier.wait(timeout=30)
+				results.append(target(index))
+			except Exception as exc:
+				frappe.db.rollback()
+				errors.append(exc)
+			finally:
+				frappe.destroy()
+
+		threads = [threading.Thread(target=worker, args=(i,)) for i in range(count)]
+		for thread in threads:
+			thread.start()
+		for thread in threads:
+			thread.join(timeout=120)
+		return results, errors
+
+	def test_the_same_document_is_booked_once(self):
+		workers = 4
+
+		def register(index):
+			invoice = make_purchase_invoice(
+				self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number="777"
+			)
+			frappe.db.commit()
+			return invoice.name
+
+		results, errors = self._run_threads(register, workers)
+		self.assertEqual(len(results), 1, errors)
+		self.assertEqual(len(errors), workers - 1)
+		for error in errors:
+			self.assertIsInstance(error, (DuplicateVoucherError, ComprobanteError))
+		frappe.db.rollback()
+		stored = frappe.get_all(
+			"Purchase Invoice", {"supplier": self.supplier, "docstatus": ("<", 2)}, pluck="pe_voucher_number"
+		)
+		self.assertEqual(stored, ["F001-00000777"])
+
+	def test_different_documents_of_one_supplier_are_all_booked(self):
+		workers = 4
+
+		def register(index):
+			invoice = make_purchase_invoice(
+				self.supplier, pe_comprobante_type="01", pe_series="F001", pe_number=str(800 + index)
+			)
+			frappe.db.commit()
+			return invoice.pe_voucher_number
+
+		results, errors = self._run_threads(register, workers)
+		self.assertEqual(errors, [])
+		self.assertEqual(sorted(results), [f"F001-{800 + n:08d}" for n in range(workers)])
