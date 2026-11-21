@@ -573,6 +573,36 @@ class TestClientAccounts(PeruTestCase):
 			frappe.db.get_value("Account", pcge_account("60110001"), "parent_account"), pcge_account("6011")
 		)
 
+	def test_an_account_below_a_rejected_row_is_not_moved_up(self):
+		"""10410601 belongs under 104106; with that row rejected it must not land under 1041."""
+		rows = [
+			{"code": "104106", "name": ""},
+			{"code": "10410601", "name": "Cuenta de la fila rechazada"},
+			{"code": "10410701", "name": "Cuenta sin fila propia"},
+		]
+		for dry_run in (True, False):
+			report = import_client_accounts(PCGE_COMPANY, rows, dry_run=dry_run)
+			with self.subTest(dry_run=dry_run):
+				self.assertEqual(
+					[(r["code"], r["reason"]) for r in report.rejected],
+					[("104106", "name_missing"), ("10410601", "parent_not_available")],
+				)
+				self.assertEqual(report.created, ["10410701"])  # no row for 104107: under 1041
+		self.assertFalse(pcge_account("10410601"))
+		self.assertEqual(
+			frappe.db.get_value("Account", pcge_account("10410701"), "parent_account"), pcge_account("1041")
+		)
+
+	def test_an_existing_account_in_a_rejected_row_still_takes_its_children(self):
+		report = import_client_accounts(
+			PCGE_COMPANY, [{"code": "1041", "name": ""}, {"code": "104108", "name": "Banco de la Nación"}]
+		)
+		self.assertEqual([r["code"] for r in report.rejected], ["1041"])
+		self.assertEqual(report.created, ["104108"])
+		self.assertEqual(
+			frappe.db.get_value("Account", pcge_account("104108"), "parent_account"), pcge_account("1041")
+		)
+
 	def test_requires_the_pcge(self):
 		with self.assertRaises(PcgeApplyError):
 			import_client_accounts(PERU_COMPANY, [{"code": "104101", "name": "BCP"}])

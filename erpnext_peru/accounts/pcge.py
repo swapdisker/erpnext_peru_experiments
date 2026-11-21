@@ -435,6 +435,9 @@ def _import_client_accounts(company: str, rows: list[dict], prefer_client_names:
 
 	prepared = []
 	seen: dict[str, int] = {}
+	# Codes of the file that will not be created: an account below one of them
+	# must not be hung from a higher account instead.
+	blocked: set[str] = set()
 	for line, row in enumerate(rows, start=1):
 		raw_code = (row or {}).get("code")
 		name = " ".join(str((row or {}).get("name") or "").split())
@@ -445,6 +448,8 @@ def _import_client_accounts(company: str, rows: list[dict], prefer_client_names:
 			continue
 		if not name:
 			report.rejected.append({"line": line, "code": code, "reason": "name_missing"})
+			if code not in existing:
+				blocked.add(code)
 			continue
 		if code in seen:
 			report.rejected.append(
@@ -455,7 +460,6 @@ def _import_client_accounts(company: str, rows: list[dict], prefer_client_names:
 		prepared.append((code, name, line))
 
 	codes_in_file = {code for code, _name, _line in prepared}
-	blocked: set[str] = set()
 
 	previous_nsm_flag = frappe.local.flags.ignore_update_nsm
 	frappe.local.flags.ignore_update_nsm = True
@@ -513,10 +517,17 @@ def _import_one(
 			current.account_name = name
 		return
 
+	# The nearest account above, among those that exist and those of the file
+	# that were not created.
 	parent_code = next(
-		(code[:length] for length in range(len(code) - 1, 0, -1) if code[:length] in existing), None
+		(
+			code[:length]
+			for length in range(len(code) - 1, 0, -1)
+			if code[:length] in existing or code[:length] in blocked
+		),
+		None,
 	)
-	if not parent_code or parent_code in blocked:
+	if not parent_code or parent_code not in existing:
 		blocked.add(code)
 		report.rejected.append({"line": line, "code": code, "reason": "parent_not_available"})
 		return
