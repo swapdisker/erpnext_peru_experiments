@@ -923,6 +923,7 @@ class TestMergedPosInvoices(SalesInvoiceCase):
 		submitted = self.submitted_pos_invoice("_TEST-PE-POS-4")
 		draft = self.submitted_pos_invoice("_TEST-PE-POS-5")
 		frappe.db.set_value("POS Invoice", draft, "docstatus", 0)
+		self.merge_log([submitted, draft])  # only the draft is wrong
 		for names in ([draft], [submitted, draft]):
 			with self.subTest(names=names):
 				invoice = self.build(names)
