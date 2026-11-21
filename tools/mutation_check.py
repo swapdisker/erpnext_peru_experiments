@@ -610,6 +610,41 @@ M = [
 		"b",
 		"test_sales_invoice",
 	),
+	(
+		"overrides/sales_invoice.py",
+		"	if doc.pe_comprobante_type and not _type_left_from_previous_save(doc):",
+		"	if doc.pe_comprobante_type:",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/sales_invoice.py",
+		'	if not before or before.get("pe_comprobante_type") != doc.pe_comprobante_type:\n		return False\n	return doc.pe_comprobante_type',
+		"	if not before:\n		return False\n	return doc.pe_comprobante_type",
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"overrides/sales_invoice.py",
+		"	if not before or _type_and_modified_type(before) == _type_and_modified_type(doc):",
+		'	if not before or before.get("pe_comprobante_type") == doc.pe_comprobante_type:',
+		"b",
+		"test_sales_invoice",
+	),
+	(
+		"accounts/pcge.py",
+		"			blocked.add(code)  # an existing account still takes its children: see _import_one\n",
+		"",
+		"b",
+		"test_pcge_apply",
+	),
+	(
+		"accounts/pcge.py",
+		"			if code[:length] in existing or code[:length] in blocked\n",
+		"			if code[:length] in existing\n",
+		"b",
+		"test_pcge_apply",
+	),
 ]
 
 

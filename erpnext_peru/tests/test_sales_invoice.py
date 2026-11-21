@@ -238,6 +238,14 @@ class TestDefaultsAndNumbering(SalesInvoiceCase):
 		invoice.save()
 		self.assertEqual(invoice.pe_comprobante_type, "03")
 
+	def test_a_type_changed_with_the_customer_is_kept(self):
+		invoice = make_sales_invoice(self.ruc_customer, pe_comprobante_type="03")
+		invoice.update({"customer": self.dni_customer, "pe_comprobante_type": "01", "pe_series": "F001"})
+		invoice.save()
+		self.assertEqual(invoice.pe_comprobante_type, "01")  # the user's choice, refused on submit
+		with self.assertRaises(ComprobanteError):
+			invoice.submit()
+
 	def test_boleta_to_a_ruc_customer_warns(self):
 		frappe.clear_messages()
 		make_sales_invoice(self.ruc_customer)  # Factura: no warning
