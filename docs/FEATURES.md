@@ -127,7 +127,8 @@ A section **Comprobante de pago (SUNAT)** on the Sales Invoice:
 - **Series:** left empty, it is filled in when the company has exactly one enabled series for
   that type. With several, you choose. When the type of a saved draft changes, or the
   modified comprobante type of a note, a series left over from before that does not fit any
-  more is chosen again the same way.
+  more is chosen again the same way. An invoice made by Auto Repeat takes the series of the
+  invoice it repeats, while that series is still enabled for its type.
 - **Modified comprobante:** on a note created from an invoice issued in this system, the type
   and number of that invoice are filled in and cannot be overridden by hand.
 - **Customer document:** copied from the customer on every save until submission. After

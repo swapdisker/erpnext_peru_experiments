@@ -186,10 +186,10 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **337 automated tests** (258 against a site, 79 without one), all passing on Frappe 16.56.0 /
+- **350 automated tests** (271 against a site, 79 without one), all passing on Frappe 16.56.0 /
   ERPNext 16.55.0 / MariaDB 10.11 on the test machine, and in CI on GitHub (Python 3.14,
   MariaDB 11.8). Until v15 was dropped they also passed on Frappe 15.126.1 / ERPNext 15.125.0.
-- **Mutation check: 114 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 121 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, the version check removed, and so on. The list is
   `tools/mutation_check.py`. On 17 November it was run end to end on v16: 99 made a test fail
@@ -213,12 +213,31 @@ Not shipped, because no official source could be confirmed or reached:
   made the sale impossible to complete); a note whose modified type was corrected kept the old
   series; and in the account import, the accounts below a rejected row were hung from a higher
   account. The 43 mutants of sales_invoice.py and pcge.py (5 of them new) were all caught.
+  A third review on 21 November also ran ERPNext's own tools against the app and found five
+  more. ERPNext v16's "Delete Company Transactions" deleted the voucher series, losing a Last
+  Number Issued that may continue a previous system; its "Retry" of a failed deletion skipped
+  the app's check and deleted a Boleta issued after the first attempt; and the check did not
+  run at all once the company's country had been changed. Four users registering the same
+  supplier Factura at the same moment booked it four times, IGV credit included. An invoice
+  made by Auto Repeat lost its series, so with several series the repetition failed and
+  switched itself off. Each fix has its own tests; on 21 November the whole list of 119
+  mutants was run end to end and every one was caught, and the 2 added after that as well.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
   was refused, the worker created 1,774 accounts in about 30 seconds and the state read "done".
 - **Concurrency:** 8 database connections allocating 40 numbers in parallel produce exactly
   1..40; rolled-back allocations leave no gap; 4 invoices submitted in parallel get 4
-  consecutive numbers.
+  consecutive numbers. 4 purchase drafts corrected at the same moment to the same supplier
+  document leave it booked once (the other three are told it is a duplicate), and 4 drafts of
+  one supplier corrected to different documents are all saved, without a deadlock.
+- **Roles:** besides Administrator, the tests register customers as Sales User, suppliers as
+  Purchase Master Manager, and issue a Factura with its credit note and book a supplier
+  voucher as Accounts User, including the searches behind the new link fields.
+- **Generated inputs:** the pure functions (identity numbers, issued and received voucher
+  numbers, series, amount in words, account codes) were run against 20,000 generated inputs
+  each, with Hypothesis, checking independent references and properties (a normalized value
+  stays the same when validated again, fits its database field, and so on). Nothing was
+  found. Hypothesis is not a dependency of the app; the run is not part of the suite.
 - **RUC algorithm:** four published RUCs and an independently written reference over 20,000
   random numbers.
 - **Amount in words:** cross-checked against the `num2words` library for 0–99,999 and 50,000
@@ -236,8 +255,10 @@ Not shipped, because no official source could be confirmed or reached:
   That standard behaviour is unaffected rests on this app's tests that non-Peruvian companies
   are left untouched. Run ERPNext's suite in CI before a release.
 - **PCGE account names**, line by line against the PDF, by a person.
-- **The refusal of "Delete Transactions"** is covered by tests only. It was not tried on the
-  screen, because if it failed the tool would delete the test site's data.
+- **"Delete Transactions"** was not tried on the screen, because if the refusal failed the
+  tool would delete the site's data. The tests run ERPNext's own tool, on a company of its
+  own and inside a transaction that is rolled back: the series survive it, and a "Retry"
+  after comprobantes were issued is refused.
 - **Anything with real data.** All test data is synthetic.
 
 ## 6. Decisions awaiting the accountant
@@ -386,6 +407,20 @@ in production:
   the setup wizard, and creating a company failed ("Could not find Warehouse Type: Transit").
   The app's own `tests/utils.py: prepare_site` now runs the wizard.
 
+Found on 21 November, while testing purchases registered at the same moment:
+
+- **Frappe's own naming series** takes the same kind of lock. On MariaDB 11.8, of several new
+  documents of one naming series created in the same instant, all but one are refused (error
+  1020), and the very first documents of a new series can deadlock. Nothing is stored twice;
+  the others must be saved again. This is Frappe's code, not this app's; the server setting
+  above decides it too. The purchase concurrency tests therefore name their drafts one at a
+  time.
+- **A locking read can lock more than it finds.** With `name !=` in the query and fresh
+  statistics, MariaDB may scan the primary key or another index, and lock every row it passes.
+  The purchase duplicate check therefore forces the voucher number's index
+  (`overrides/purchase_invoice.py: _registered_elsewhere`); without it two users correcting
+  two drafts of one supplier deadlocked on CI.
+
 Since 17 November the app supports v16 only: the v15 branches in the tests (the old test base
 class, the v15 sidebar test, ERPNext's `before_tests`) are gone, and a `before_install` hook
 refuses to install on any other major version. Bench itself only warns when the versions in
@@ -426,6 +461,12 @@ refuses to install on any other major version. Bench itself only warns when the 
   "Provincia". Relabelling them (to Provincia / Departamento) would change the form for every
   country; not done. Decide with the users.
 - **Uninstalling** leaves the custom fields and their data.
+- **Opening invoices are exempt.** Anyone who can create invoices can tick "Is Opening Entry",
+  and that invoice gets no comprobante type or number. It is meant for bringing in the old
+  system's open invoices; whether to restrict it is for the accountant.
+- **The rules follow the company's country.** A company whose country is changed away from
+  Peru stops getting comprobante numbers on new invoices. Its issued vouchers stay protected:
+  they cannot be deleted, and neither can the company's transactions.
 - **No roles or permissions of its own.** The form actions require System Manager or Accounts
   Manager; the catalogue masters are readable by everyone. The proposal's Migration User /
   Migration Approver roles do not exist yet.
@@ -607,7 +648,7 @@ tools/
   ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
                                 SUNAT Catálogo 13 (2014)
   ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
-  mutation_check.py             the 114 deliberate bugs
+  mutation_check.py             the 121 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -680,4 +721,11 @@ erpnext_peru/
 | 0.2.0 | `Sales: the comprobante type follows a change of customer on a saved draft` | Only a type still equal to the previous default is set again. |
 | 0.2.0 | `Account import: an account below a rejected row is not hung higher up` | Rejected with `parent_not_available`. |
 | 0.2.0 | `Sales: the series also follows a corrected modified comprobante type` | FC01 -> BC01 when a note's modified type changes. |
-| 0.2.0 | this commit | Documents updated for the second review; 337 tests, 114 mutants. |
+| 0.2.0 | `Handover and README: second review, 337 tests, 114 mutants` | Documents updated for the second review. |
+| 0.2.0 | `Delete Company Transactions: keep the series, and check a retry too` | Found by running ERPNext's tool on a test company. |
+| 0.2.0 | `Tests: the daily work done by Sales User, Accounts User and Purchase Master` | First tests that do not run as Administrator. |
+| 0.2.0 | `Purchases: the same supplier document is booked once, even at the same moment` | Supplier row lock and a locking duplicate check. |
+| 0.2.0 | `Delete Company Transactions: refused whatever the company's country is now` | The country can change after vouchers were issued. |
+| 0.2.0 | `Purchases: the duplicate check locks only rows of the same document` | The CI deadlock on MariaDB 11.8. |
+| 0.2.0 | `Sales: an invoice made by Auto Repeat keeps the series of the one it repeats` | Recurring invoices no longer stop with several series. |
+| 0.2.0 | this commit | Documents updated for the third review; 350 tests, 121 mutants. |

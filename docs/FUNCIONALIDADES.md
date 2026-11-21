@@ -137,7 +137,9 @@ Una sección **Comprobante de pago (SUNAT)** en la Factura de venta:
 - **Serie:** si se deja vacía, se completa cuando la compañía tiene exactamente una serie
   habilitada para ese tipo. Si hay varias, se debe elegir. Si cambia el tipo de un borrador
   guardado, o el tipo del comprobante que modifica una nota, la serie anterior que ya no
-  corresponde se vuelve a elegir de la misma forma.
+  corresponde se vuelve a elegir de la misma forma. Una factura creada por la repetición
+  automática (Auto Repeat) toma la serie de la factura que repite, mientras esa serie siga
+  habilitada para su tipo.
 - **Comprobante que modifica:** en una nota creada a partir de un comprobante emitido en este
   sistema, el tipo y el número de ese comprobante se completan y no se pueden cambiar a mano.
 - **Documento del cliente:** se copia del cliente cada vez que se guarda, hasta la validación.
