@@ -47,6 +47,7 @@ from erpnext_peru.utils.voucher import (
 	format_voucher_number,
 	normalize_series,
 	normalize_voucher_number,
+	parse_voucher_number,
 	validate_issued_series,
 )
 
@@ -275,6 +276,7 @@ def _set_note_fields(doc):
 	else:
 		doc.pe_credit_note_reason = None
 
+	linked = None
 	if doc.get("return_against"):
 		original = _linked_original(doc)
 		# The linked invoice is authoritative. Invoices issued before this app was
@@ -282,6 +284,7 @@ def _set_note_fields(doc):
 		if original and original.pe_voucher_number and original.pe_comprobante_type:
 			doc.pe_original_type = original.pe_comprobante_type
 			doc.pe_original_voucher_number = original.pe_voucher_number
+			linked = original
 
 	if doc.pe_original_type:
 		check_catalogue_entry(COMPROBANTE_TYPE_DOCTYPE, doc.pe_original_type, _("Modified Comprobante Type"))
@@ -296,6 +299,9 @@ def _set_note_fields(doc):
 			throw_voucher_error(error)
 	else:
 		doc.pe_original_voucher_number = None
+
+	if not linked and doc.pe_original_type and doc.pe_original_voucher_number:
+		_check_typed_reference(doc)
 
 
 def _linked_original(doc):
@@ -331,6 +337,73 @@ def _linked_original(doc):
 			exc=ComprobanteError,
 		)
 	return original
+
+
+def _check_typed_reference(doc):
+	"""A modified voucher typed by hand, checked against the vouchers issued here.
+
+	It may be a voucher of a previous system or on paper, which this app cannot
+	know. But when its series is one of the company's, the voucher must have
+	been issued, to this customer, and not cancelled. Returns it, if issued here.
+	"""
+	issued = frappe.db.get_value(
+		"Sales Invoice",
+		{
+			"company": doc.company,
+			"pe_comprobante_type": doc.pe_original_type,
+			"pe_voucher_number": doc.pe_original_voucher_number,
+		},
+		["name", "customer", "docstatus"],
+		as_dict=True,
+	)
+	voucher = frappe.bold(doc.pe_original_voucher_number)
+	if issued:
+		if issued.docstatus == 2:
+			frappe.throw(
+				_("Comprobante {0} ({1}) is cancelled: a note cannot modify it.").format(
+					voucher, issued.name
+				),
+				exc=ComprobanteError,
+			)
+		if issued.customer != doc.customer:
+			frappe.throw(
+				_(
+					"Comprobante {0} ({1}) was issued to {2}: a note is issued to the same customer as the comprobante it modifies."
+				).format(voucher, issued.name, frappe.bold(issued.customer)),
+				exc=ComprobanteError,
+			)
+		return issued
+	series, number = parse_voucher_number(doc.pe_original_voucher_number)
+	last = frappe.db.get_value(
+		"SUNAT Voucher Series",
+		{"company": doc.company, "comprobante_type": doc.pe_original_type, "series": series},
+		"current_number",
+	)
+	if last is not None and number > cint(last):
+		frappe.throw(
+			_("Comprobante {0} has not been issued: the last number issued in series {1} is {2}.").format(
+				voucher, frappe.bold(series), cint(last)
+			),
+			exc=ComprobanteError,
+		)
+	if last is None:
+		other_type = frappe.db.get_value(
+			"SUNAT Voucher Series",
+			{
+				"company": doc.company,
+				"series": series,
+				"comprobante_type": ("in", [t for t in MODIFIABLE_TYPES if t != doc.pe_original_type]),
+			},
+			"comprobante_type",
+		)
+		if other_type:
+			frappe.throw(
+				_(
+					"Series {0} is the company's series for comprobante type {1}, not {2}: check the type of the comprobante the note modifies."
+				).format(frappe.bold(series), other_type, doc.pe_original_type),
+				exc=ComprobanteError,
+			)
+	return None
 
 
 def _fill_pos_return_reason(doc):

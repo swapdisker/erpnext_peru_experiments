@@ -553,10 +553,10 @@ class TestCreditNotes(SalesInvoiceCase):
 			is_return=1,
 			pe_credit_note_reason="01",
 			pe_original_type="01",
-			pe_original_voucher_number="f001-77",
+			pe_original_voucher_number="f009-77",  # a series this system does not use
 		)
 		self.assertEqual(note.pe_comprobante_type, "07")
-		self.assertEqual(note.pe_original_voucher_number, "F001-00000077")
+		self.assertEqual(note.pe_original_voucher_number, "F009-00000077")
 		self.assertEqual(note.pe_series, "FC01")
 		note.submit()
 		self.assertEqual(note.pe_voucher_number, "FC01-00000001")
@@ -568,10 +568,10 @@ class TestCreditNotes(SalesInvoiceCase):
 			is_return=1,
 			pe_credit_note_reason="01",
 			pe_original_type="01",
-			pe_original_voucher_number="F001-77",
+			pe_original_voucher_number="F009-77",
 		)
 		self.assertEqual(note.pe_series, "FC01")
-		note.update({"pe_original_type": "03", "pe_original_voucher_number": "B001-77"})
+		note.update({"pe_original_type": "03", "pe_original_voucher_number": "B009-77"})
 		note.save()
 		self.assertEqual(note.pe_series, "BC01")
 
@@ -586,6 +586,48 @@ class TestCreditNotes(SalesInvoiceCase):
 		)
 		note.submit()
 		self.assertEqual(note.pe_original_voucher_number, "0001-00000123")
+
+	def typed_note(self, voucher, customer=None, original_type="01"):
+		"""A credit note whose modified voucher is typed by hand, without "Return Against"."""
+		return make_sales_invoice(
+			customer or self.ruc_customer,
+			qty=-1,
+			is_return=1,
+			pe_credit_note_reason="01",
+			pe_original_type=original_type,
+			pe_original_voucher_number=voucher,
+		)
+
+	def test_a_typed_voucher_of_this_customer_is_accepted(self):
+		note = self.typed_note("F001-1")
+		note.submit()
+		self.assertEqual(note.pe_original_voucher_number, "F001-00000001")
+
+	def test_a_typed_voucher_of_a_previous_system_is_accepted(self):
+		"""The series continues a previous system's numbering: 1..500 were issued there."""
+		make_series("01", "F002", current_number=500)
+		self.typed_note("F002-123").submit()
+
+	def test_a_typed_voucher_of_another_customer_is_refused(self):
+		other = make_customer("_Test PE SI RUC 4", "6", make_ruc(30000004)).name
+		with self.assertRaisesRegex(ComprobanteError, "was issued to"):
+			self.typed_note("F001-1", customer=other)
+
+	def test_a_typed_cancelled_voucher_is_refused(self):
+		cancelled = make_sales_invoice(self.ruc_customer)
+		cancelled.submit()
+		cancelled.cancel()
+		with self.assertRaisesRegex(ComprobanteError, "is cancelled"):
+			self.typed_note(cancelled.pe_voucher_number)
+
+	def test_a_typed_voucher_not_issued_yet_is_refused(self):
+		with self.assertRaisesRegex(ComprobanteError, "has not been issued"):
+			self.typed_note("F001-2")
+
+	def test_a_typed_voucher_of_the_wrong_type_is_refused(self):
+		"""F001 is the company's Factura series: "Boleta F001-1" cannot exist."""
+		with self.assertRaisesRegex(ComprobanteError, "series for comprobante type 01"):
+			self.typed_note("F001-1", customer=self.dni_customer, original_type="03")
 
 	def test_credit_note_without_reference_is_blocked(self):
 		note = make_sales_invoice(self.ruc_customer, qty=-1, is_return=1, pe_credit_note_reason="01")
@@ -619,9 +661,9 @@ class TestCreditNotes(SalesInvoiceCase):
 			is_return=1,
 			pe_credit_note_reason="01",
 			pe_original_type="01",
-			pe_original_voucher_number="F001-5",
+			pe_original_voucher_number="F009-5",
 		)
-		with self.assertRaises(ComprobanteError):
+		with self.assertRaisesRegex(ComprobanteError, "RUC"):
 			note.submit()
 
 

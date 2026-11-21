@@ -150,3 +150,7 @@
 "Another document of supplier {0} was being registered at the same moment. Save this one again.","Otro documento del proveedor {0} se estaba registrando en el mismo momento. Guarde este nuevamente.",""
 "{0} is not submitted: a note can only modify an invoice that was issued.","{0} no está validada: una nota solo puede modificar una factura que fue emitida.",""
 "{0} was issued to {1} of company {2}: a note is issued to the same customer, by the same company, as the invoice it modifies.","{0} fue emitida a {1} por la compañía {2}: una nota se emite al mismo cliente, y por la misma compañía, que la factura que modifica.",""
+"Comprobante {0} ({1}) is cancelled: a note cannot modify it.","El comprobante {0} ({1}) está anulado: una nota no puede modificarlo.",""
+"Comprobante {0} ({1}) was issued to {2}: a note is issued to the same customer as the comprobante it modifies.","El comprobante {0} ({1}) fue emitido a {2}: una nota se emite al mismo cliente que el comprobante que modifica.",""
+"Comprobante {0} has not been issued: the last number issued in series {1} is {2}.","El comprobante {0} no ha sido emitido: el último número emitido en la serie {1} es {2}.",""
+"Series {0} is the company's series for comprobante type {1}, not {2}: check the type of the comprobante the note modifies.","La serie {0} es la serie de la compañía para el tipo de comprobante {1}, no {2}: revise el tipo del comprobante que modifica la nota.",""
