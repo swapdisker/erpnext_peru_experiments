@@ -131,9 +131,13 @@ Una sección **Comprobante de pago (SUNAT)** en la Factura de venta:
 
 - **Tipo:** si se deja vacío, se asigna Factura cuando el cliente tiene RUC y Boleta en los
   demás casos. Una devolución pasa a ser Nota de crédito y una nota de débito, Nota de débito.
+  Un tipo asignado así se vuelve a asignar si cambia lo que lo decidió, como el cliente del
+  borrador: una Boleta guardada para un cliente sin RUC pasa a Factura si se cambia a un
+  cliente con RUC. Un tipo elegido a mano se respeta.
 - **Serie:** si se deja vacía, se completa cuando la compañía tiene exactamente una serie
   habilitada para ese tipo. Si hay varias, se debe elegir. Si cambia el tipo de un borrador
-  guardado, la serie que quedó del tipo anterior se vuelve a elegir de la misma forma.
+  guardado, o el tipo del comprobante que modifica una nota, la serie anterior que ya no
+  corresponde se vuelve a elegir de la misma forma.
 - **Comprobante que modifica:** en una nota creada a partir de un comprobante emitido en este
   sistema, el tipo y el número de ese comprobante se completan y no se pueden cambiar a mano.
 - **Documento del cliente:** se copia del cliente cada vez que se guarda, hasta la validación.
@@ -278,7 +282,8 @@ La aplicación se ejecuta en segundo plano y tarda alrededor de medio minuto; la
 Para desarrolladores: `erpnext_peru.accounts.pcge.import_client_accounts(company, rows, dry_run=True)`
 agrega cuentas como `104101 BCP Soles` bajo la cuenta del PCGE que corresponde. Rechaza las
 filas incorrectas indicando el motivo y continúa, informa los conflictos y tiene una ejecución
-de prueba. Todavía no tiene pantalla.
+de prueba. Las cuentas que van debajo de una fila rechazada también se rechazan, en vez de
+colgarse de una cuenta superior. Todavía no tiene pantalla.
 
 ## 10. IGV
 

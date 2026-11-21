@@ -120,10 +120,14 @@ A section **Comprobante de pago (SUNAT)** on the Sales Invoice:
 ### What is filled in for you
 
 - **Type:** left empty, it becomes Factura when the customer has a RUC and Boleta otherwise. A
-  return becomes a Nota de crédito and a debit note a Nota de débito.
+  return becomes a Nota de crédito and a debit note a Nota de débito. A type filled in this way
+  is set again when what decided it changes, such as the draft's customer: a Boleta saved for
+  a customer without RUC becomes a Factura when the customer is changed to one with RUC. A
+  type chosen by hand is kept.
 - **Series:** left empty, it is filled in when the company has exactly one enabled series for
-  that type. With several, you choose. When the type of a saved draft changes, a series that
-  was left over from the previous type is chosen again the same way.
+  that type. With several, you choose. When the type of a saved draft changes, or the
+  modified comprobante type of a note, a series left over from before that does not fit any
+  more is chosen again the same way.
 - **Modified comprobante:** on a note created from an invoice issued in this system, the type
   and number of that invoice are filled in and cannot be overridden by hand.
 - **Customer document:** copied from the customer on every save until submission. After
@@ -262,7 +266,9 @@ Applying runs in the background and takes about half a minute; the page waits an
 
 For developers: `erpnext_peru.accounts.pcge.import_client_accounts(company, rows, dry_run=True)`
 adds accounts such as `104101 BCP Soles` under the right PCGE account. It rejects bad rows with
-a reason and continues, reports conflicts, and has a dry run. There is no screen for it yet.
+a reason and continues, reports conflicts, and has a dry run. The accounts below a rejected
+row are rejected too, instead of being placed under a higher account. There is no screen for
+it yet.
 
 ## 10. IGV
 
