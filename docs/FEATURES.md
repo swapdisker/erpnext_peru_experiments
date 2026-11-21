@@ -35,6 +35,8 @@ choices that still need an accountant.
   moment: `06` (total return) when every item of the sale comes back in full, `07` (return by
   item) otherwise. A reason chosen by hand is kept. If POS Settings are switched to POS Invoices, the
   invoice ERPNext builds when the shift is closed is exempt instead: it gets no type or number.
+  It is recognised by its POS Invoices being merged at that moment by a submitted merge log; an
+  invoice that only names POS Invoices, or those of an earlier shift, gets the rules.
 - The identity document rules apply to any customer or supplier that has an identity document
   filled in. A party without one is left untouched.
 - The interface is available in English and Spanish.
@@ -67,7 +69,7 @@ What happens on save:
   (modulus 11). A mistyped digit is caught.
 - **DNI:** must have exactly 8 digits. Leading zeros are kept.
 - **Carnet de extranjería and passport:** letters and digits only, up to 12 characters.
-- **Other types:** up to 15 characters.
+- **Other types:** up to 15 visible characters, without `< > & " '` or backticks.
 - Spaces are removed and letters are upper-cased.
 - A type without a number, or a number without a type, is rejected.
 - **Duplicates:** the same document cannot be registered twice among customers, nor twice
@@ -130,9 +132,16 @@ A section **Comprobante de pago (SUNAT)** on the Sales Invoice:
   more is chosen again the same way. An invoice made by Auto Repeat takes the series of the
   invoice it repeats, while that series is still enabled for its type.
 - **Modified comprobante:** on a note created from an invoice issued in this system, the type
-  and number of that invoice are filled in and cannot be overridden by hand.
+  and number of that invoice are filled in and cannot be overridden by hand. The linked
+  invoice must be submitted and belong to the note's customer and company (ERPNext checks
+  this for returns only, not for debit notes). Typed by hand, the modified voucher is checked
+  against those issued here: if it was issued here it must be this customer's and not
+  cancelled, and if its series is one of the company's, its number must have been reached and
+  the series must be of that type. Vouchers of a previous system or on paper are accepted.
 - **Customer document:** copied from the customer on every save until submission. After
-  submission it no longer changes, even if the customer record is corrected.
+  submission it no longer changes, even if the customer record is corrected. A note states
+  the buyer of the voucher it modifies, as that voucher does, when it was issued here: SUNAT
+  requires a note to be issued to the same buyer, also after the customer's RUC is corrected.
 
 A Boleta for a customer who has a RUC is allowed, with a warning.
 
@@ -150,13 +159,16 @@ A Boleta for a customer who has a RUC is allowed, with a warning.
 The invoice is not submitted, and no number is used, unless:
 
 1. the company has a valid RUC;
-2. once the IGV templates exist, the invoice has at least one tax line (the 18% one, or one
-   of the 0% ones for exempt, unaffected or export sales);
+2. once the IGV templates exist, the invoice has at least one tax line of an IGV template
+   (the 18% one, or one of the 0% ones for exempt, unaffected or export sales); another kind
+   of line, such as a freight charge, does not count;
 3. for a **Factura**, the customer is identified with a RUC (or with type `0`, non-domiciled,
    intended for exports);
 4. for a **Boleta de venta** whose total in soles, IGV included, is **more than S/ 700.00**,
    the customer has an identity document (S/ 700.00 exactly is allowed without one); the same
-   applies to a credit or debit note that modifies a Boleta, measured on the note's amount;
+   applies to a credit or debit note that modifies a Boleta, measured on the note's amount. A
+   placeholder made of zeros or dashes (`00000000`, `-`), which some systems use for "clientes
+   varios", does not identify anybody: it is accepted on a customer and up to S/ 700;
 5. for a **credit or debit note**, a reason is selected and the modified comprobante is
    indicated (its type and its number, for example `F001-00000123`);
 6. the series is registered and enabled in SUNAT Voucher Series.
@@ -194,6 +206,8 @@ Cancellation itself is not restricted: see [section 14](#14-what-is-not-included
 - It cannot be set below a number that has already been issued, including cancelled vouchers.
 - Company, type and series cannot be changed after creation.
 - Each series can be registered only once per company and type, so it has a single counter.
+  Two companies with the same RUC (a branch kept as a company, say) cannot both register the
+  same type and series: SUNAT identifies a comprobante by RUC, type, series and number.
 - A series that has been used cannot be deleted; disable it instead.
 - Numbers go from 1 to 99,999,999 and are shown with eight digits.
 
@@ -221,8 +235,12 @@ These fields are optional at this stage. When filled in:
 - other document types (public service receipts and so on) are checked loosely: up to 20
   letters, digits or hyphens;
 - a number without a type is rejected;
-- **duplicates:** the same document of the same supplier cannot be registered twice in a
-  company, however it is typed, not even by two users at the same moment. A cancelled
+- Facturas, Boletas and their notes need a supplier registered with its **RUC**: they always
+  carry it, and without it the same document could be booked again under a second record of
+  the same supplier;
+- **duplicates:** the same document of the same supplier cannot be registered twice, however
+  it is typed, not even by two users at the same moment. A Factura, Boleta or note is booked
+  once on the whole site, by one company; other documents once per company. A cancelled
   document can be registered again;
 - a purchase return must be type 07, and a type 07 document must be entered as a return;
 - a credit or debit note needs the modified comprobante to be submitted; it is filled in

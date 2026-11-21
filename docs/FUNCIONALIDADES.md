@@ -39,7 +39,9 @@ variar según la versión.
   momento: `06` (devolución total) cuando vuelven completos todos los artículos de la venta,
   `07` (devolución por ítem) en otro caso. Un motivo elegido a mano se respeta. Si la
   Configuración POS se cambia a POS Invoices, la factura que ERPNext genera al cerrar el turno
-  queda exenta: no recibe tipo ni número.
+  queda exenta: no recibe tipo ni número. Se la reconoce porque sus POS Invoices se están
+  consolidando en ese momento con un registro de consolidación validado; una factura que solo
+  menciona POS Invoices, o los de un turno anterior, sigue las reglas.
 - Las reglas de documentos de identidad se aplican a todo cliente o proveedor que tenga un
   documento de identidad registrado. Si no lo tiene, no se le exige nada.
 - La interfaz está disponible en español y en inglés.
@@ -75,7 +77,7 @@ Al guardar:
   correcto (módulo 11). Un dígito mal escrito se detecta.
 - **DNI:** debe tener exactamente 8 dígitos. Se conservan los ceros a la izquierda.
 - **Carnet de extranjería y pasaporte:** solo letras y dígitos, hasta 12 caracteres.
-- **Otros tipos:** hasta 15 caracteres.
+- **Otros tipos:** hasta 15 caracteres visibles, sin `< > & " '` ni acentos graves.
 - Se eliminan los espacios y las letras pasan a mayúsculas.
 - Se rechaza un tipo sin número y un número sin tipo.
 - **Duplicados:** el mismo documento no puede registrarse dos veces entre los clientes, ni dos
@@ -142,8 +144,17 @@ Una sección **Comprobante de pago (SUNAT)** en la Factura de venta:
   habilitada para su tipo.
 - **Comprobante que modifica:** en una nota creada a partir de un comprobante emitido en este
   sistema, el tipo y el número de ese comprobante se completan y no se pueden cambiar a mano.
+  La factura vinculada debe estar validada y ser del mismo cliente y de la misma compañía que
+  la nota (ERPNext lo verifica solo en las devoluciones, no en las notas de débito). Si se
+  escribe a mano, se compara con los comprobantes emitidos aquí: si fue emitido aquí, debe ser
+  de este cliente y no estar anulado; si su serie es una de la compañía, su número debe haberse
+  alcanzado y la serie debe ser de ese tipo. Se aceptan comprobantes de un sistema anterior o
+  en papel.
 - **Documento del cliente:** se copia del cliente cada vez que se guarda, hasta la validación.
-  Después ya no cambia, aunque se corrija la ficha del cliente.
+  Después ya no cambia, aunque se corrija la ficha del cliente. Una nota consigna al
+  adquirente del comprobante que modifica, tal como figura en ese comprobante, cuando fue
+  emitido aquí: la SUNAT exige que la nota se emita al mismo adquirente, también después de
+  corregirse el RUC del cliente.
 
 Se permite una Boleta para un cliente que tiene RUC, con un aviso.
 
@@ -161,14 +172,17 @@ Se permite una Boleta para un cliente que tiene RUC, con un aviso.
 El documento no se valida, y no se usa ningún número, salvo que:
 
 1. la compañía tenga un RUC válido;
-2. una vez creadas las plantillas de IGV, el documento tenga al menos una línea de impuesto
-   (la de 18%, o una de las de 0% para ventas exoneradas, inafectas o de exportación);
+2. una vez creadas las plantillas de IGV, el documento tenga al menos una línea de impuesto de
+   una plantilla de IGV (la de 18%, o una de las de 0% para ventas exoneradas, inafectas o de
+   exportación); otra clase de línea, como un flete, no cuenta;
 3. en una **Factura**, el cliente esté identificado con RUC (o con el tipo `0`, no
    domiciliado, pensado para exportaciones);
 4. en una **Boleta de venta** cuyo total en soles, con IGV, sea **mayor a S/ 700.00**, el
    cliente tenga documento de identidad (con S/ 700.00 exactos se permite sin documento); lo
    mismo vale para una nota de crédito o débito que modifica una Boleta, según el importe de la
-   nota;
+   nota. Un documento de relleno hecho de ceros o guiones (`00000000`, `-`), que algunos
+   sistemas usan para "clientes varios", no identifica a nadie: se acepta en un cliente y hasta
+   S/ 700;
 5. en una **nota de crédito o de débito**, se haya elegido el motivo e indicado el comprobante
    que modifica (su tipo y su número, por ejemplo `F001-00000123`);
 6. la serie esté registrada y habilitada en Series de Comprobantes SUNAT.
@@ -209,6 +223,9 @@ En **Series de Comprobantes SUNAT** se registra cada serie que emite una compañ
 - No se puede poner por debajo de un número ya emitido, incluidos los comprobantes anulados.
 - La compañía, el tipo y la serie no se pueden cambiar después de crear el registro.
 - Cada serie se registra una sola vez por compañía y tipo, así que tiene un único contador.
+  Dos compañías con el mismo RUC (una sucursal llevada como compañía, por ejemplo) no pueden
+  registrar las dos el mismo tipo y serie: la SUNAT identifica un comprobante por RUC, tipo,
+  serie y número.
 - Una serie ya usada no se puede eliminar; se deshabilita.
 - Los números van de 1 a 99,999,999 y se muestran con ocho dígitos.
 
@@ -236,9 +253,13 @@ Estos campos son opcionales por ahora. Cuando se llenan:
 - los demás tipos de documento (recibos de servicios públicos, etc.) se revisan con menos
   rigor: hasta 20 letras, dígitos o guiones;
 - se rechaza un número sin tipo;
-- **duplicados:** el mismo documento del mismo proveedor no puede registrarse dos veces en
-  una compañía, se escriba como se escriba, ni siquiera por dos usuarios en el mismo momento.
-  Un documento anulado sí puede volver a registrarse;
+- las Facturas, Boletas y sus notas necesitan un proveedor registrado con su **RUC**: siempre
+  lo llevan, y sin él el mismo documento podría registrarse de nuevo con otra ficha del mismo
+  proveedor;
+- **duplicados:** el mismo documento del mismo proveedor no puede registrarse dos veces, se
+  escriba como se escriba, ni siquiera por dos usuarios en el mismo momento. Una Factura,
+  Boleta o nota se registra una sola vez en todo el sitio, por una compañía; los demás
+  documentos, una vez por compañía. Un documento anulado sí puede volver a registrarse;
 - una devolución de compra debe ser tipo 07, y un documento tipo 07 debe registrarse como
   devolución;
 - una nota de crédito o de débito necesita el comprobante que modifica para poder validarse;
