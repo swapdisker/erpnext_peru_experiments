@@ -3,13 +3,13 @@
 Peruvian localization for [ERPNext](https://github.com/frappe/erpnext) v16 (Frappe and
 ERPNext 16, Python 3.14), as a separate Frappe app. Nothing in ERPNext core is modified.
 
-**Status: early development, v0.2.0.** It runs on Frappe / ERPNext v16 and has 350 automated
+**Status: early development, v0.2.0.** It runs on Frappe / ERPNext v16 and has 375 automated
 tests; its main screens have been checked on a test site. It has not yet been reviewed by an
 accountant or used by a company in production, and it sends nothing to SUNAT: electronic
 invoicing is still to be built. Try it on a test site first, and have an accountant confirm
 its rules before relying on it. Licensed under GPL-3.0, without warranty.
 
-**Estado: en desarrollo inicial, v0.2.0.** Funciona en Frappe / ERPNext v16 y tiene 350 pruebas
+**Estado: en desarrollo inicial, v0.2.0.** Funciona en Frappe / ERPNext v16 y tiene 375 pruebas
 automáticas; sus pantallas principales se revisaron en un sitio de prueba. Aún no lo ha revisado
 un contador ni lo usa una empresa en producción, y no envía nada a SUNAT: la facturación
 electrónica está pendiente. Pruébelo primero en un sitio de prueba y pida a un contador que

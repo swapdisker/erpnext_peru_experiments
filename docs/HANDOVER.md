@@ -186,10 +186,10 @@ Not shipped, because no official source could be confirmed or reached:
 
 ## 5. How it was verified
 
-- **350 automated tests** (271 against a site, 79 without one), all passing on Frappe 16.56.0 /
+- **375 automated tests** (296 against a site, 79 without one), all passing on Frappe 16.56.0 /
   ERPNext 16.55.0 / MariaDB 10.11 on the test machine, and in CI on GitHub (Python 3.14,
   MariaDB 11.8). Until v15 was dropped they also passed on Frappe 15.126.1 / ERPNext 15.125.0.
-- **Mutation check: 121 deliberate bugs**, injected one at a time: wrong check-digit weight,
+- **Mutation check: 141 deliberate bugs**, injected one at a time: wrong check-digit weight,
   `>` changed to `>=` on the S/ 700 rule, row lock removed, IGV rate set to 16%, the "company
   has ledger entries" guard removed, the version check removed, and so on. The list is
   `tools/mutation_check.py`. On 17 November it was run end to end on v16: 99 made a test fail
@@ -222,6 +222,19 @@ Not shipped, because no official source could be confirmed or reached:
   made by Auto Repeat lost its series, so with several series the repetition failed and
   switched itself off. Each fix has its own tests; on 21 November the whole list of 119
   mutants was run end to end and every one was caught, and the 2 added after that as well.
+  A fourth review the same day checked the rules against SUNAT's texts and tried to break
+  them on purpose; it found ten more. A debit note could be linked to another customer's or
+  company's Factura, which ERPNext checks for returns only, and a note typed by hand could
+  name another customer's voucher, a cancelled one, or a number its series never reached.
+  After a customer's RUC was corrected, a note went to the corrected RUC instead of the buyer
+  on the voucher it modifies, which SUNAT forbids. A Boleta of S/ 1,500 was issued to DNI
+  00000000. Through the API, a sale that named one POS Invoice of an earlier shift was issued
+  with no comprobante at all. The same supplier Factura could be booked twice, under a second
+  supplier record without RUC or by a second company; two companies with the same RUC could
+  both register F001; and any tax row, a freight charge for instance, satisfied the "IGV must
+  be stated" rule. Identity numbers holding HTML were rewritten by Frappe after validation.
+  Each fix has its own tests and mutants; the whole list of 141 was run end to end and every
+  one was caught.
 - **Background job:** besides the tests, "Apply PCGE" was run once through a real queue and
   worker on a site outside the test runner: the request returned "queued", a second request
   was refused, the worker created 1,774 accounts in about 30 seconds and the state read "done".
@@ -272,11 +285,15 @@ Each is a judgement written into the code and easy to change. The file is given.
 2. **Boleta threshold.** Identity is required when the total in soles, IGV included, is
    *strictly greater* than 700.00. The exemption for non-domiciled buyers who cannot have a
    document is not implemented. A credit or debit note on a Boleta follows the same rule,
-   measured on the note's own amount (a credit note of S/ 800 needs the customer's document).
+   measured on the note's own amount (a credit note of S/ 800 needs a document; when the
+   Boleta was issued here, the note takes the one the Boleta states). A document made of
+   zeros or dashes (`00000000`, `-`) counts as none; others commonly used for "clientes
+   varios" (`99999999`, say) are not recognised.
 3. **Default type.** Empty type becomes Factura when the customer has a RUC, Boleta otherwise.
    A Boleta to a customer with RUC is allowed, with a warning.
 4. **Purchase side is optional.** Type, series and number of the supplier's document are
-   validated when entered but not required.
+   validated when entered but not required. Once a Factura, Boleta or note is entered, its
+   supplier must have its RUC (decision 25).
 5. **Supplier credit notes** must be entered as ERPNext returns (type 07 ⇔ "Is Return").
 6. **Credit note reasons 02 and 03** are not restricted by the type of the modified document.
 7. **Series of received vouchers** must have exactly four characters for types 01/03/07/08.
@@ -324,6 +341,25 @@ Each is a judgement written into the code and easy to change. The file is given.
     the MEF. In account pickers only the number tells them apart. Decide whether to qualify the
     names (for example "Mercaderías - venta local - Terceros"); `apply_pcge` keeps existing
     names, so this is best decided before the PCGE is applied to a real company.
+
+### Added by the fourth review (21 November)
+
+21. **Exchange rate for the S/ 700 rule.** A Boleta in dollars is converted with the
+    invoice's own exchange rate, which the user can edit: typed as 0.01, a Boleta of
+    US$ 10,000 counts as S/ 100 and needs no document (and is booked at that value). Decide
+    whether the rate must be checked against Currency Exchange or the SBS rate of the day.
+22. **Reasons that annul or return everything** (`01` anulación de la operación, `02` error
+    en el RUC, `06` devolución total) are not checked to cover the whole voucher: a partial
+    note can carry them. At the point of sale the app itself only uses `06` for a total
+    return.
+23. **Reason `13`** (correction of the amount pending or the due dates of a credit sale) is
+    meant for Facturas sold on credit; the app has no payment terms of its own and does not
+    restrict it.
+24. **Factura to identity type `0`** is accepted without checking that the sale is an export
+    (for example, that the invoice uses the export template).
+25. **Received Facturas, Boletas and notes** now need a supplier with its RUC, and are booked
+    once on the whole site. Confirm that no company of the group books another one's
+    documents.
 
 ## 7. ERPNext behaviours that matter for Peru
 
@@ -441,7 +477,11 @@ refuses to install on any other major version. Bench itself only warns when the 
   switched to "POS Invoice", closing a shift merges its sales into one Sales Invoice per
   customer; that invoice is not a comprobante (each sale needs its own), so the app leaves it
   alone: no type, no number. It is recognised only when every item comes from a submitted POS
-  Invoice, so setting `is_consolidated` through the API does not bypass the rules. That mode
+  Invoice that a submitted merge log is merging at that moment and that no earlier invoice
+  consolidated, so setting `is_consolidated` through the API, or naming POS Invoices of an
+  earlier shift, does not bypass the rules. That condition was checked against ERPNext's merge
+  code and Frappe's order of saving, and is tested with records written directly; it has not
+  been run through a real shift closing. That mode
   issues no comprobantes at all and should not be used for Peruvian companies until it does.
 - **Unique indexes are created on migrate, unless the data already has duplicates.** Then the
   index is skipped, the duplicates are listed in the migrate output and the Error Log, and the
@@ -464,6 +504,20 @@ refuses to install on any other major version. Bench itself only warns when the 
 - **Opening invoices are exempt.** Anyone who can create invoices can tick "Is Opening Entry",
   and that invoice gets no comprobante type or number. It is meant for bringing in the old
   system's open invoices; whether to restrict it is for the accountant.
+- **Sending deadlines of electronic invoicing.** A Factura, or a note of one, must reach
+  SUNAT on its issue date or within the next three calendar days (R.S. 000003-2023/SUNAT);
+  later it is rejected. The app numbers an invoice on submission whatever its posting date,
+  so a Factura dated more than three days back, or in the future, gets a number it will not
+  be able to use once e-invoicing exists. Decide the rule with the e-invoicing work.
+- **The issuer is not copied onto the invoice.** The company's RUC and name are read from the
+  company; correcting them later changes what past vouchers show. The buyer's document is
+  copied (and a note takes the one of the voucher it modifies), but the buyer's name on the
+  invoice is ERPNext's own `customer_name`.
+- **Two returns of one invoice at the same instant.** ERPNext checks the quantity still
+  returnable with a plain read, so two users returning the whole of one invoice in the same
+  moment could both pass it. Not tested, and the app adds no lock there.
+- **Other cases where a Boleta must name its buyer** at any amount: goods moved with a guía de
+  remisión, and sales in the Zona Comercial de Tacna above US$ 25. The app knows neither.
 - **The rules follow the company's country.** A company whose country is changed away from
   Peru stops getting comprobante numbers on new invoices. Its issued vouchers stay protected:
   they cannot be deleted, and neither can the company's transactions.
@@ -592,6 +646,9 @@ also forces a migrate.
   line; a line-level field or item tax templates will be needed for mixed invoices.
 - Send after submission (an `on_submit` hook or a queue), never inside `before_submit`: the
   series row is locked there.
+- Mind the sending deadline (section 8): a Factura or its note dated more than three days
+  back cannot be sent. Refuse such dates on submission, or before the number is taken.
+- Keep the issuer's RUC and name on the voucher, as the buyer's document already is.
 - Add status fields and block cancellation of accepted vouchers (section 8).
 - `Address.pe_ubigeo` exists for the issuer and customer address.
 
@@ -648,7 +705,7 @@ tools/
   ubigeo/raw/                   INEI 2022 code list, place names of INEI's 2026 directory,
                                 SUNAT Catálogo 13 (2014)
   ubigeo/build_ubigeo.py        checks the three against each other -> data/ubigeo.csv
-  mutation_check.py             the 121 deliberate bugs
+  mutation_check.py             the 141 deliberate bugs
 erpnext_peru/
   hooks.py                      document hooks, form script, install / migrate / test hooks
   utils/                        pure Python, no Frappe
@@ -728,4 +785,15 @@ erpnext_peru/
 | 0.2.0 | `Delete Company Transactions: refused whatever the company's country is now` | The country can change after vouchers were issued. |
 | 0.2.0 | `Purchases: the duplicate check locks only rows of the same document` | The CI deadlock on MariaDB 11.8. |
 | 0.2.0 | `Sales: an invoice made by Auto Repeat keeps the series of the one it repeats` | Recurring invoices no longer stop with several series. |
-| 0.2.0 | this commit | Documents updated for the third review; 350 tests, 121 mutants. |
+| 0.2.0 | `Handover and README: third review, 350 tests, 121 mutants` | Documents updated for the third review. |
+| 0.2.0 | `Notes: the invoice a note is linked to must be issued, and the customer's own` | ERPNext checks it for returns only. |
+| 0.2.0 | `Notes: a modified voucher typed by hand is checked against those issued here` | Another customer's, cancelled, or not yet reached. |
+| 0.2.0 | `Notes: a note names the buyer of the voucher it modifies, as that voucher does` | SUNAT: same buyer. |
+| 0.2.0 | `Boletas: above S/ 700, a placeholder document does not identify the buyer` | 00000000 and "-". |
+| 0.2.0 | `Merged POS invoices: only those being merged by a submitted merge log` | API bypass closed. |
+| 0.2.0 | `Purchases: Facturas, Boletas and their notes need a supplier with its RUC` | Second supplier record. |
+| 0.2.0 | `Purchases: a supplier's Factura, Boleta or note is booked once on the site` | Across companies. |
+| 0.2.0 | `Identity numbers: refuse the characters of HTML` | Rewritten by Frappe after validation. |
+| 0.2.0 | `Voucher series: one series per RUC, also when two companies share the RUC` | Duplicate CPE numbers. |
+| 0.2.0 | `IGV: an invoice must have a row of an IGV template, not just any tax row` | Freight-only invoices. |
+| 0.2.0 | this commit | Documents updated for the fourth review; 375 tests, 141 mutants. |
