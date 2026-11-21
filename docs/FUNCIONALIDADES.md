@@ -183,7 +183,10 @@ un tipo de cambio a PEN registrado en Cambio de Divisas.
   con un número nuevo.
 - Un documento que tiene número de comprobante no se puede eliminar. Cuando una compañía ya
   emitió algún comprobante, el botón **Eliminar transacciones** de la compañía se rechaza con
-  un mensaje: borraría las facturas y las series con ellas.
+  un mensaje: borraría las facturas emitidas. Esto vale sea cual sea el país actual de la
+  compañía, y también para un "Reintentar" de una eliminación que falló antes. Las series de
+  comprobantes nunca se eliminan con las transacciones: cada una conserva su último número
+  emitido.
 
 La anulación en sí no está restringida: vea la [sección 14](#14-lo-que-no-incluye).
 
@@ -232,7 +235,8 @@ Estos campos son opcionales por ahora. Cuando se llenan:
   rigor: hasta 20 letras, dígitos o guiones;
 - se rechaza un número sin tipo;
 - **duplicados:** el mismo documento del mismo proveedor no puede registrarse dos veces en
-  una compañía, se escriba como se escriba. Un documento anulado sí puede volver a registrarse;
+  una compañía, se escriba como se escriba, ni siquiera por dos usuarios en el mismo momento.
+  Un documento anulado sí puede volver a registrarse;
 - una devolución de compra debe ser tipo 07, y un documento tipo 07 debe registrarse como
   devolución;
 - una nota de crédito o de débito necesita el comprobante que modifica para poder validarse;

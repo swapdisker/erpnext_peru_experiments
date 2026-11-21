@@ -171,7 +171,9 @@ PEN is registered in Currency Exchange.
 - A cancelled invoice keeps its number. Amending it creates a new invoice with a new number.
 - An invoice that has a voucher number cannot be deleted. Once a company has issued
   any comprobante, the **Delete Transactions** button of the Company form is refused with a
-  message: it would delete the invoices and the voucher series with them.
+  message: it would delete the issued invoices. This holds whatever the company's country is
+  now, and also for a "Retry" of a deletion that failed earlier. The voucher series are never
+  deleted with the transactions: each keeps its last number issued.
 
 Cancellation itself is not restricted: see [section 14](#14-what-is-not-included).
 
@@ -219,7 +221,8 @@ These fields are optional at this stage. When filled in:
   letters, digits or hyphens;
 - a number without a type is rejected;
 - **duplicates:** the same document of the same supplier cannot be registered twice in a
-  company, however it is typed. A cancelled document can be registered again;
+  company, however it is typed, not even by two users at the same moment. A cancelled
+  document can be registered again;
 - a purchase return must be type 07, and a type 07 document must be entered as a return;
 - a credit or debit note needs the modified comprobante to be submitted; it is filled in
   automatically when the note is created from an invoice that has it;
