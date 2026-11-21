@@ -197,6 +197,10 @@ class TestValidateIdentityNumber(unittest.TestCase):
 		with self.assertRaises(IdentityError) as ctx:
 			validate_identity_number("0", "ÑANDÚ")
 		self.assertEqual(ctx.exception.code, "invalid_characters")
+		for markup in ("<B>1</B>", "1&2", 'A"1', "A'1", "A`1"):
+			with self.subTest(markup=markup), self.assertRaises(IdentityError) as ctx:
+				validate_identity_number("B", markup)
+			self.assertEqual(ctx.exception.code, "invalid_characters")
 
 	def test_normalize(self):
 		self.assertEqual(normalize_identity_number(None), "")

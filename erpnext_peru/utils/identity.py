@@ -53,6 +53,9 @@ ALPHANUMERIC_ONLY = frozenset({DOC_CE, DOC_PASSPORT})
 
 _ALNUM_RE = re.compile(r"^[A-Z0-9]+$")
 _PRINTABLE_RE = re.compile(r"^[!-~]+$")  # visible ASCII, no spaces
+# Characters of HTML that no document number has. Frappe would rewrite a value
+# holding them after this validation, and they would reach printed documents.
+_MARKUP_CHARACTERS = frozenset("<>&\"'`")
 
 
 class IdentityError(CodedError):
@@ -147,7 +150,7 @@ def validate_identity_number(doc_type, number) -> str:
 				"Identity document number may only contain letters and digits",
 				value=value,
 			)
-	elif not _PRINTABLE_RE.match(value):
+	elif not _PRINTABLE_RE.match(value) or _MARKUP_CHARACTERS & set(value):
 		raise IdentityError(
 			"invalid_characters",
 			"Identity document number contains characters that are not allowed",
