@@ -4,9 +4,10 @@
 
 The tool deletes with plain SQL, past the hook that keeps every issued voucher
 on record (``sales_invoice.on_trash``). Afterwards the vouchers SUNAT already
-has would be gone from the books. So the tool is refused for a Peruvian
-company that has issued any comprobante; companies that never issued one (a
-test company, say) can still be emptied.
+has would be gone from the books. So the tool is refused for a company that
+has issued any comprobante; companies that never issued one (a test company,
+say) can still be emptied. The company's country is not looked at: it can be
+changed after the vouchers were issued.
 
 The check runs when the deletion is submitted and again whenever the submitted
 record is saved: ERPNext's "Retry" of a failed deletion does that, calling the
@@ -22,15 +23,13 @@ voucher is issued here.
 import frappe
 from frappe import _
 
-from erpnext_peru.overrides.common import ComprobanteError, is_peru_company
+from erpnext_peru.overrides.common import ComprobanteError
 
 SERIES_DOCTYPE = "SUNAT Voucher Series"
 
 
 def before_submit(doc, method=None):
 	company = doc.get("company")
-	if not is_peru_company(company):
-		return
 	issued = frappe.db.count("Sales Invoice", {"company": company, "pe_voucher_number": ("is", "set")})
 	if issued:
 		frappe.throw(

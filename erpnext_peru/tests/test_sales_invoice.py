@@ -907,6 +907,14 @@ class TestTransactionDeletion(SalesInvoiceCase):
 	def test_other_countries_are_not_concerned(self):
 		self.check(FOREIGN_COMPANY)
 
+	def test_a_company_moved_out_of_peru_keeps_its_comprobantes(self):
+		make_sales_invoice(self.dni_customer, rate=100).submit()
+		frappe.db.set_value("Company", PERU_COMPANY, "country", "United States")
+		frappe.clear_cache(doctype="Company")
+		self.addCleanup(frappe.clear_cache, doctype="Company")
+		with self.assertRaisesRegex(ComprobanteError, "cannot be deleted"):
+			self.check(PERU_COMPANY)
+
 	def test_the_tool_calls_it(self):
 		hooks = frappe.get_hooks("doc_events", app_name="erpnext_peru")
 		for event in ("before_submit", "before_update_after_submit"):
