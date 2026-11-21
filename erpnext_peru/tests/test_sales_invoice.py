@@ -552,6 +552,20 @@ class TestCreditNotes(SalesInvoiceCase):
 		note.submit()
 		self.assertEqual(note.pe_voucher_number, "FC01-00000001")
 
+	def test_series_follows_a_corrected_modified_type(self):
+		note = make_sales_invoice(
+			self.dni_customer,
+			qty=-1,
+			is_return=1,
+			pe_credit_note_reason="01",
+			pe_original_type="01",
+			pe_original_voucher_number="F001-77",
+		)
+		self.assertEqual(note.pe_series, "FC01")
+		note.update({"pe_original_type": "03", "pe_original_voucher_number": "B001-77"})
+		note.save()
+		self.assertEqual(note.pe_series, "BC01")
+
 	def test_note_may_modify_a_paper_voucher(self):
 		note = make_sales_invoice(
 			self.ruc_customer,

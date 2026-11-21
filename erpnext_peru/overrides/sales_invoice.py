@@ -365,21 +365,25 @@ def _set_series(doc):
 
 
 def _series_left_from_previous_type(doc, series) -> bool:
-	"""True when the type changed since the last save and the series no longer fits it.
+	"""True when the series is the one of the last save and no longer fits the new type.
 
 	A draft first saved as a Boleta gets B001; switched to Factura, that series
-	is replaced instead of refused. A series typed in the same save is checked
-	as usual.
+	is replaced instead of refused. The same holds for a note whose modified
+	comprobante type is corrected (FC01 -> BC01), and for an invoice that became
+	a note. A series typed in the same save is checked as usual.
 	"""
 	if doc.is_new():
 		return False
 	before = doc.get_doc_before_save()
-	if not before or before.get("pe_comprobante_type") == doc.pe_comprobante_type:
+	if not before or _type_and_modified_type(before) == _type_and_modified_type(doc):
 		return False
 	if normalize_series(before.get("pe_series")) != series:
 		return False
-	letter = expected_series_letter(doc.pe_comprobante_type, doc.pe_original_type)
-	return bool(letter) and series[0] != letter
+	return series not in _series_options(doc)
+
+
+def _type_and_modified_type(doc) -> tuple:
+	return (doc.get("pe_comprobante_type") or None, doc.get("pe_original_type") or None)
 
 
 def _validate_issuer(doc):
